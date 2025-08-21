@@ -1,0 +1,10 @@
+{
+  "id": "md-viewer",
+  "name": "MD Viewer",
+  "version": "2.7.0",
+  "minAppVersion": "0.14.0",
+  "description": "A markdown document viewer plugin that provides enhanced viewing capabilities for markdown files.",
+  "author": "Cuman",
+  "authorUrl": "https://github.com/cumany/obsidian-floating-toc-plugin",
+  "isDesktopOnly": false
+}
