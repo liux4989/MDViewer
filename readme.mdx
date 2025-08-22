@@ -1,0 +1,24 @@
+# Features
+- display with two mode: compact and detailed
+- display content : only h1-h2-h3 3 levels
+- respond to user's scroll : compat mode hightlight the current heading , if current mode's is detailed is hightlight  the current heading and since the limit  length of detail window, the window is also scroll to the current heading
+- response to user's hover: compat mode will convert to detail mode, if the user pointer leave, the mode will convert to compat mode
+- response to user's hover on specific heading in detail mode: hightlight the headings
+- response to user's click on specific heading in detail mode: scroll the current article to the heading
+
+# Style
+- obsidian - built in style
+- compat mode: tree view with different line length to represent the level of the heading
+
+
+
+
+# obsidian api can use :
+1. CachedMetadata.headings (https://docs.obsidian.md/Reference/TypeScript+API/CachedMetadata/headings#CachedMetadata.headings+property)
+2. root split in workspace(https://docs.obsidian.md/Plugins/User+interface/Workspace#Splits)
+3. check current position in editor
+
+
+# Note : 
+- settings: skip the settings at current stage
+- display position:  positioned in the middle-left of the editor view

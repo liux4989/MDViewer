@@ -1,6 +1,7 @@
 import esbuild from "esbuild";
 import process from "process";
 import builtins from "builtin-modules";
+import mdx from "@mdx-js/esbuild";
 
 const banner =
 `/*
@@ -40,6 +41,7 @@ const context = await esbuild.context({
 	outfile: 'main.js',
 	jsx: 'automatic',
 	jsxImportSource: 'react',
+	plugins: [mdx()],
 });
 
 if (prod) {

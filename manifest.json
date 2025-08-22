@@ -1,10 +1,10 @@
 {
-  "id": "md-viewer",
-  "name": "MD Viewer",
-  "version": "2.7.0",
-  "minAppVersion": "0.14.0",
-  "description": "A markdown document viewer plugin that provides enhanced viewing capabilities for markdown files.",
-  "author": "Cuman",
-  "authorUrl": "https://github.com/cumany/obsidian-floating-toc-plugin",
+  "id": "floating-toc",
+  "name": "Floating TOC",
+  "version": "1.0.1",
+  "minAppVersion": "0.15.0",
+  "description": "An interactive floating table of contents overlay positioned in the middle-left of the editor view for quick navigation and visual context.",
+  "author": "Floating TOC Plugin Team",
+  "authorUrl": "https://github.com/floating-toc-plugin/obsidian-floating-toc",
   "isDesktopOnly": false
 }

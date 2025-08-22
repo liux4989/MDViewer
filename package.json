@@ -1,7 +1,7 @@
 {
-  "name": "md-viewer",
+  "name": "floating-toc",
   "version": "1.0.0",
-  "description": "A markdown document viewer plugin that provides enhanced viewing capabilities for markdown files",
+  "description": "An interactive floating table of contents overlay positioned in the middle-left of the editor view for quick navigation and visual context",
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",
@@ -30,6 +30,9 @@
     "typescript": "4.7.4"
   },
   "dependencies": {
+    "@mdx-js/esbuild": "^3.1.0",
+    "@mdx-js/loader": "^3.1.0",
+    "@mdx-js/react": "^3.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   }
