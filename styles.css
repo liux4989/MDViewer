@@ -1,0 +1,37 @@
+.floating-toc-view {
+	padding: var(--size-4-4);
+	background-color: var(--background-primary);
+	color: var(--text-normal);
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.floating-toc-view h1 {
+	margin: 0 0 var(--size-2-3) 0;
+	font-size: var(--font-ui-large);
+	color: var(--text-accent);
+}
+
+.floating-toc-view p {
+	margin: 0 0 var(--size-2-2) 0;
+}
+
+.floating-toc-view .ft-button {
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+	border: none;
+	border-radius: var(--radius-s);
+	padding: 6px 10px;
+	cursor: pointer;
+}
+
+.floating-toc-view .ft-button:hover {
+	background-color: var(--interactive-accent-hover);
+}
+
+.floating-toc-view .ft-setting {
+	margin-top: var(--size-2-2);
+	opacity: 0.8;
+}
+
+
+

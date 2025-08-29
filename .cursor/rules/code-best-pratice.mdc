@@ -1,0 +1,16 @@
+---
+description: when develop UI Components , business logic code
+alwaysApply: false
+---
+// Code Organization
+- Prefer modular code structure for maintainability and scalability.
+
+// Separation of Concerns
+- Keep UI components focused on rendering and user interactions.
+- Isolate business logic from UI components; handle core functionality separately.
+
+// React Best Practices
+- Use functional components and React hooks for state and side effects management.
+
+// Styling
+- Avoid inline or built-in styles; use external style.css for all UI styling.
