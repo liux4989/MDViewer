@@ -2,7 +2,7 @@
 
 ## Task 1: Initialize React Integration Obsidian [AI]
 
-
+### Subtasks:
 1. init obsidian plugin environments
 2. init react integration and app context with obsidian app
 3. init thrid plugins : tanstack-query , vitest , zod
@@ -24,7 +24,6 @@
 2. Create Obsidian interfaces
    - `ObsidianFile` (metadata from metadataCache)
    - `ObsidianHeading` (raw heading data)
-3. Add validation schemas (Zod optional)
 
 ### Success Criteria:
 - ✅ Interfaces compile without errors
