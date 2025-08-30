@@ -30,13 +30,16 @@
 - ✅ Unit tests pass with mock data
 - ✅ **COMPLETED**: Task 2.1 finished and committed
 
+Task History : Execute task2(e65ea9e2-c854-4ddb-a915-dd5140d52b8f)
+
+
 ## Task 2.2: Obsidian Data Integration [AI]
 
 ### Subtasks:
 1. Survey Obsidian APIs (metadataCache, vault, workspace)
 2. Implement file metadata extraction
 3. Implement heading extraction
-4. Create  integration test via Obsidian command 
+4. Create  integration test via intergrating test logic into obsidian view and show the test status
 
 ### Success Criteria:
 - ✅ Real Obsidian environment testing works [Human]
