@@ -37,13 +37,14 @@ Task History : Execute task2(e65ea9e2-c854-4ddb-a915-dd5140d52b8f)
 
 ### Subtasks:
 1. Survey Obsidian APIs (metadataCache, vault, workspace)
-2. Implement file metadata extraction
-3. Implement heading extraction
-4. Create  integration test via intergrating test logic into obsidian view and show the test status
+2. Implement file metadata extraction api with *ObsidianFile* interface
+3. Implement heading extraction api with *ObsidianHeading* interface
+4. Add integration tests of ObsidianDataService methods in Obsidian env(test in the Obsidian view and display the test status  )
 
 ### Success Criteria:
 - ✅ Real Obsidian environment testing works [Human]
 - ✅ Mock tests cover basic error cases
+- ✅ **COMPLETED**: Task 2.2 finished and committed
 
 ## Task 2.3: Data Transformation & Service [AI]
 
@@ -55,7 +56,6 @@ Task History : Execute task2(e65ea9e2-c854-4ddb-a915-dd5140d52b8f)
 3. Build `TocDataService` class
    - `getCurrentFileHeadings()`
    - `getFileHeadings(filePath)`
-   - `refreshHeadings()`
 
 ### Success Criteria:
 - ✅ Mock data transforms correctly
