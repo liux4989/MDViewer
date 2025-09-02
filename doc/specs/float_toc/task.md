@@ -62,4 +62,74 @@ Task History : Execute task2(e65ea9e2-c854-4ddb-a915-dd5140d52b8f)
 - ✅ Basic error handling works
 
 
+# Phase 3: Repository Layer
+
+## Task 3.1: Define Domain Models [AI]
+
+### Subtasks:
+1. Create domain-specific TocHeading model
+   - Extend base TocHeading with domain logic
+   - Add methods for heading manipulation (getLevel(), getText(), getId())
+   - Implement heading hierarchy logic
+2. Create TocFile domain model
+   - Business logic for file operations
+   - Heading collection management
+   - File metadata handling
+3. Create TocData domain model
+   - Active heading tracking
+   - State management for current file
+   - Navigation state handling
+
+### Success Criteria:
+- ✅ Domain models encapsulate business logic
+- ✅ Unit tests cover domain behavior
+- ✅ Models are immutable where appropriate
+
+
+## Task 3.2: Repository Pattern Implementation [AI]
+
+### Subtasks:
+1. Create TocHeadingRepository interface
+   - `findById(id: string): TocHeading | null`
+   - `findByFile(filePath: string): TocHeading[]`
+   - `findByLevel(level: number): TocHeading[]`
+   - `getActiveHeading(): TocHeading | null`
+2. Implement TocHeadingRepositoryImpl
+   - Wrap TocDataService with repository pattern
+   - Add caching layer for performance
+   - Implement error handling and logging
+3. Create TocFileRepository interface
+   - `getCurrentFile(): TocFile | null`
+   - `getFileByPath(path: string): TocFile | null`
+   - `getAllFiles(): TocFile[]`
+
+### Success Criteria:
+- ✅ Repository interfaces are well-defined
+- ✅ Implementation provides clean data access
+- ✅ Caching improves performance
+
+
+## Task 3.3: API Layer Creation [AI]
+
+### Subtasks:
+1. Create public API interfaces
+   - `getHeading(id: string): Promise<TocHeading | null>`
+   - `getHeadingsByFile(filePath: string): Promise<TocHeading[]>`
+   - `getCurrentFileHeadings(): Promise<TocHeading[]>`
+   - `getActiveHeading(): Promise<TocHeading | null>`
+2. Implement API service layer
+   - Wrap repository calls with API contracts
+   - Add input validation and sanitization
+   - Implement consistent error responses
+3. Add integration tests
+   - Test API endpoints with mock repositories
+   - Verify error handling and edge cases
+   - Test performance with large datasets
+
+### Success Criteria:
+- ✅ Public APIs are stable and documented
+- ✅ Error handling is consistent across APIs
+- ✅ Integration tests verify end-to-end functionality
+
+
 

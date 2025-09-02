@@ -8,5 +8,6 @@ export type { TocHeading, TocFile, TocData } from './toc';
 // Obsidian Integration Interfaces
 export type { ObsidianFile, ObsidianHeading } from './toc';
 
-// Obsidian Data Service (Task 2.2)
-export { ObsidianDataService } from '../services/obsidianDataService';
+// Data Source and Repository (Phase 1 Refactor)
+export { ObsidianDataSource, type IObsidianDataSource } from '../datasources/obsidianDataSource';
+export { TocRepository, type ITocRepository, type TocDataServiceError, type Result } from '../repositories/tocRepository';

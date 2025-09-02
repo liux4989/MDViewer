@@ -1,16 +1,29 @@
 /**
- * Obsidian Data Integration Service - Task 2.2
- * Basic integration with Obsidian APIs for file metadata and heading extraction
+ * Obsidian Data Source - Phase 1 Refactor
+ * Raw access to Obsidian APIs for file metadata and heading extraction
  */
 
 import type { App, TFile } from 'obsidian';
 import type { ObsidianFile, ObsidianHeading } from '../schemas/toc';
 
 /**
- * Service for basic Obsidian API integration
- * Provides access to file metadata and heading extraction
+ * Interface for Obsidian data source operations
+ * Provides raw access to Obsidian APIs
  */
-export class ObsidianDataService {
+export interface IObsidianDataSource {
+  getActiveFile(): TFile | null;
+  getMarkdownFiles(): TFile[];
+  extractFileMetadata(file: TFile | null): ObsidianFile | null;
+  extractHeadings(file: TFile | null): ObsidianHeading[];
+  isCacheAvailable(file: TFile | null): boolean;
+  getRawCache(file: TFile | null): any;
+}
+
+/**
+ * Implementation of Obsidian data source
+ * Provides direct access to Obsidian APIs
+ */
+export class ObsidianDataSource implements IObsidianDataSource {
   constructor(private app: App) {}
 
   /**

@@ -1,125 +1,110 @@
 /**
- * TocDataService Error Handling Tests - Task 2.3
- * Tests for error handling in TocDataService
+ * TocRepository Error Handling Tests - Phase 2 Refactor
+ * Tests for error handling in TocRepository
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { TocDataService } from '../../ui/services/tocDataService';
-import type { App, TFile } from 'obsidian';
+import { TocRepository, ObsidianDataSource } from '../../ui/schemas';
+import type { IObsidianDataSource, TFile } from 'obsidian';
 
-// Mock Obsidian App
-const mockApp = {
-  workspace: {
-    getActiveFile: vi.fn()
-  },
-  vault: {
-    getAbstractFileByPath: vi.fn(),
-    getMarkdownFiles: vi.fn()
-  },
-  metadataCache: {
-    getFileCache: vi.fn()
-  }
-} as unknown as App;
+// Mock Data Source
+const mockDataSource = {
+  getActiveFile: vi.fn(),
+  getMarkdownFiles: vi.fn(),
+  extractFileMetadata: vi.fn(),
+  extractHeadings: vi.fn(),
+  isCacheAvailable: vi.fn(),
+  getRawCache: vi.fn()
+} as unknown as IObsidianDataSource;
 
 // Type the mock functions properly
-const mockGetActiveFile = mockApp.workspace.getActiveFile as any;
-const mockGetAbstractFileByPath = mockApp.vault.getAbstractFileByPath as any;
-const mockGetMarkdownFiles = mockApp.vault.getMarkdownFiles as any;
-const mockGetFileCache = mockApp.metadataCache.getFileCache as any;
+const mockGetActiveFile = mockDataSource.getActiveFile as any;
+const mockGetMarkdownFiles = mockDataSource.getMarkdownFiles as any;
+const mockExtractFileMetadata = mockDataSource.extractFileMetadata as any;
+const mockExtractHeadings = mockDataSource.extractHeadings as any;
 
-describe('TocDataService Error Handling', () => {
-  let service: TocDataService;
+describe('TocRepository Error Handling', () => {
+  let repository: TocRepository;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    service = new TocDataService(mockApp);
+    repository = new TocRepository(mockDataSource);
   });
 
   describe('getCurrentFileHeadings', () => {
     it('should handle no active file', async () => {
       mockGetActiveFile.mockReturnValue(null);
 
-      const result = await service.getCurrentFileHeadings();
+      const result = await repository.getCurrentFileHeadings();
 
-      expect(result.data).toBeNull();
-      expect(result.error).toBeTruthy();
-      expect(result.error?.code).toBe('NO_ACTIVE_FILE');
-      expect(result.error?.message).toContain('No active file available');
+      expect(result.ok).toBe(false);
+      expect(result.error.code).toBe('NO_ACTIVE_FILE');
+      expect(result.error.message).toContain('No active file available');
     });
 
     it('should handle Obsidian API errors gracefully', async () => {
       const mockFile = { path: 'test.md' } as TFile;
       mockGetActiveFile.mockReturnValue(mockFile);
 
-      // Mock metadataCache to throw error
-      mockGetFileCache.mockImplementation(() => {
-        throw new Error('Metadata cache error');
+      // Mock data source to throw error
+      mockExtractFileMetadata.mockImplementation(() => {
+        throw new Error('Data source error');
       });
 
-      const result = await service.getCurrentFileHeadings();
+      const result = await repository.getCurrentFileHeadings();
 
-      expect(result.data).toBeNull();
-      expect(result.error).toBeTruthy();
-      expect(result.error?.code).toBe('TRANSFORMATION_FAILED');
-      expect(result.error?.originalError).toBeInstanceOf(Error);
+      expect(result.ok).toBe(false);
+      expect(result.error.code).toBe('TRANSFORMATION_FAILED');
+      expect(result.error.originalError).toBeInstanceOf(Error);
     });
   });
 
   describe('getFileHeadings', () => {
     it('should handle file not found', async () => {
-      mockGetAbstractFileByPath.mockReturnValue(null);
       mockGetMarkdownFiles.mockReturnValue([]);
 
-      const result = await service.getFileHeadings('nonexistent.md');
+      const result = await repository.getFileHeadings('nonexistent.md');
 
-      expect(result.data).toBeNull();
-      expect(result.error).toBeTruthy();
-      expect(result.error?.code).toBe('FILE_NOT_FOUND');
+      expect(result.ok).toBe(false);
+      expect(result.error.code).toBe('FILE_NOT_FOUND');
     });
 
     it('should handle invalid file metadata', async () => {
       const mockFile = { path: 'test.md' } as TFile;
-      mockGetAbstractFileByPath.mockReturnValue(mockFile);
+      mockGetMarkdownFiles.mockReturnValue([mockFile]);
 
       // Mock invalid metadata extraction
-      const originalService = service as any;
-      originalService.obsidianService.extractFileMetadata = vi.fn().mockReturnValue(null);
+      mockExtractFileMetadata.mockReturnValue(null);
 
-      const result = await service.getFileHeadings('test.md');
+      const result = await repository.getFileHeadings('test.md');
 
-      expect(result.data).toBeNull();
-      expect(result.error).toBeTruthy();
-      expect(result.error?.code).toBe('INVALID_DATA');
+      expect(result.ok).toBe(false);
+      expect(result.error.code).toBe('INVALID_DATA');
     });
 
     it('should handle transformation failures', async () => {
       const mockFile = { path: 'test.md' } as TFile;
-      mockGetAbstractFileByPath.mockReturnValue(mockFile);
-      mockGetFileCache.mockReturnValue({});
+      mockGetMarkdownFiles.mockReturnValue([mockFile]);
 
       // Mock successful metadata but failed headings extraction
-      const originalService = service as any;
-      originalService.obsidianService.extractFileMetadata = vi.fn().mockReturnValue({ path: 'test.md' });
-      originalService.obsidianService.extractHeadings = vi.fn().mockReturnValue(null);
+      mockExtractFileMetadata.mockReturnValue({ path: 'test.md' });
+      mockExtractHeadings.mockReturnValue(null);
 
-      const result = await service.getFileHeadings('test.md');
+      const result = await repository.getFileHeadings('test.md');
 
-      expect(result.data).toBeNull();
-      expect(result.error).toBeTruthy();
-      expect(result.error?.code).toBe('INVALID_DATA');
+      expect(result.ok).toBe(false);
+      expect(result.error.code).toBe('INVALID_DATA');
     });
 
     it('should handle validation failures', async () => {
       const mockFile = { path: 'test.md' } as TFile;
-      mockGetAbstractFileByPath.mockReturnValue(mockFile);
-      mockGetFileCache.mockReturnValue({});
+      mockGetMarkdownFiles.mockReturnValue([mockFile]);
 
-      const originalService = service as any;
-      originalService.obsidianService.extractFileMetadata = vi.fn().mockReturnValue({ path: 'test.md' });
-      originalService.obsidianService.extractHeadings = vi.fn().mockReturnValue([]);
+      mockExtractFileMetadata.mockReturnValue({ path: 'test.md' });
+      mockExtractHeadings.mockReturnValue([]);
 
       // Mock the transformation to return a TocFile but validation to fail
-      vi.mock('../../ui/services/tocDataTransformation', () => ({
+      vi.mock('../../ui/repositories/tocMappers', () => ({
         obsidianToTocFile: vi.fn().mockReturnValue({
           path: 'test.md',
           headings: [] // Valid structure but we'll make validation fail
@@ -127,11 +112,10 @@ describe('TocDataService Error Handling', () => {
         validateTocFile: vi.fn().mockReturnValue(false)
       }));
 
-      const result = await service.getFileHeadings('test.md');
+      const result = await repository.getFileHeadings('test.md');
 
-      expect(result.data).toBeNull();
-      expect(result.error).toBeTruthy();
-      expect(result.error?.code).toBe('VALIDATION_FAILED');
+      expect(result.ok).toBe(false);
+      expect(result.error.code).toBe('VALIDATION_FAILED');
     });
   });
 
@@ -140,33 +124,27 @@ describe('TocDataService Error Handling', () => {
   describe('Error Recovery', () => {
     it('should handle API errors gracefully', async () => {
       const mockFile = { path: 'test.md' } as TFile;
-      mockGetAbstractFileByPath.mockReturnValue(mockFile);
-      mockGetFileCache.mockReturnValue({});
-
-      const originalService = service as any;
+      mockGetMarkdownFiles.mockReturnValue([mockFile]);
 
       // Mock extractFileMetadata to throw an error
-      originalService.obsidianService.extractFileMetadata = vi.fn().mockImplementation(() => {
+      mockExtractFileMetadata.mockImplementation(() => {
         throw new Error('API Error');
       });
 
-      const result = await service.getFileHeadings('test.md');
+      const result = await repository.getFileHeadings('test.md');
 
-      expect(result.data).toBeNull();
-      expect(result.error).toBeTruthy();
-      expect(result.error?.code).toBe('TRANSFORMATION_FAILED');
-      expect(result.error?.originalError).toBeInstanceOf(Error);
+      expect(result.ok).toBe(false);
+      expect(result.error.code).toBe('TRANSFORMATION_FAILED');
+      expect(result.error.originalError).toBeInstanceOf(Error);
     });
 
     it('should handle null file input gracefully', async () => {
-      mockGetAbstractFileByPath.mockReturnValue(null);
       mockGetMarkdownFiles.mockReturnValue([]);
 
-      const result = await service.getFileHeadings('nonexistent.md');
+      const result = await repository.getFileHeadings('nonexistent.md');
 
-      expect(result.data).toBeNull();
-      expect(result.error).toBeTruthy();
-      expect(result.error?.code).toBe('FILE_NOT_FOUND');
+      expect(result.ok).toBe(false);
+      expect(result.error.code).toBe('FILE_NOT_FOUND');
     });
   });
 });

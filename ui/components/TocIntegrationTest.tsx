@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useObsidianApp } from '../ObsidianAppContext';
-import { ObsidianDataService } from '../services/obsidianDataService';
+import { ObsidianDataSource } from '../schemas';
 import type { ObsidianFile, ObsidianHeading } from '../schemas/toc';
 
 interface TestResult {
@@ -25,7 +25,7 @@ export const TocIntegrationTest: React.FC = () => {
     results: [],
     overallStatus: 'pending'
   });
-  const [service] = useState(() => new ObsidianDataService(app));
+  const [dataSource] = useState(() => new ObsidianDataSource(app));
 
   const updateTestResult = (index: number, updates: Partial<TestResult>) => {
     setTestState(prev => ({
@@ -53,7 +53,7 @@ export const TocIntegrationTest: React.FC = () => {
         test: async () => {
           const testStart = Date.now();
           try {
-            const activeFile = service.getActiveFile();
+            const activeFile = dataSource.getActiveFile();
             if (!activeFile) {
               return {
                 name: 'extractFileMetadata - Valid Markdown File',
@@ -63,7 +63,7 @@ export const TocIntegrationTest: React.FC = () => {
               };
             }
 
-            const metadata = service.extractFileMetadata(activeFile);
+            const metadata = dataSource.extractFileMetadata(activeFile);
 
             // Test that metadata is returned
             if (!metadata) {
@@ -125,7 +125,7 @@ export const TocIntegrationTest: React.FC = () => {
         test: async () => {
           const testStart = Date.now();
           try {
-            const markdownFiles = service.getMarkdownFiles();
+            const markdownFiles = dataSource.getMarkdownFiles();
 
             // Find a non-markdown file if available, or create a mock non-markdown file
             const nonMarkdownFiles = app.vault.getFiles().filter(file =>
@@ -147,7 +147,7 @@ export const TocIntegrationTest: React.FC = () => {
             }
 
             const nonMarkdownFile = nonMarkdownFiles[0];
-            const metadata = service.extractFileMetadata(nonMarkdownFile);
+            const metadata = dataSource.extractFileMetadata(nonMarkdownFile);
 
             // Should still extract basic file metadata even for non-markdown files
             if (!metadata) {
@@ -197,7 +197,7 @@ export const TocIntegrationTest: React.FC = () => {
         test: async () => {
           const testStart = Date.now();
           try {
-            const activeFile = service.getActiveFile();
+            const activeFile = dataSource.getActiveFile();
             if (!activeFile) {
               return {
                 name: 'extractHeadings - Valid File with Cache',
@@ -207,7 +207,7 @@ export const TocIntegrationTest: React.FC = () => {
               };
             }
 
-            const headings = service.extractHeadings(activeFile);
+            const headings = dataSource.extractHeadings(activeFile);
 
             // Test that we get an array
             if (!Array.isArray(headings)) {
@@ -272,7 +272,7 @@ export const TocIntegrationTest: React.FC = () => {
         test: async () => {
           const testStart = Date.now();
           try {
-            const markdownFiles = service.getMarkdownFiles();
+            const markdownFiles = dataSource.getMarkdownFiles();
 
             // Find a file without headings (if possible) or test with the smallest file
             let testFile = markdownFiles[0];
@@ -280,7 +280,7 @@ export const TocIntegrationTest: React.FC = () => {
 
             // Find file with fewest headings
             for (const file of markdownFiles.slice(0, 5)) { // Check first 5 files
-              const headings = service.extractHeadings(file);
+              const headings = dataSource.extractHeadings(file);
               if (headings.length < minHeadings) {
                 minHeadings = headings.length;
                 testFile = file;
@@ -289,7 +289,7 @@ export const TocIntegrationTest: React.FC = () => {
               if (headings.length === 0) break;
             }
 
-            const headings = service.extractHeadings(testFile);
+            const headings = dataSource.extractHeadings(testFile);
 
             // Test that we get an array regardless of content
             if (!Array.isArray(headings)) {
@@ -356,7 +356,7 @@ export const TocIntegrationTest: React.FC = () => {
         test: async () => {
           const testStart = Date.now();
           try {
-            const activeFile = service.getActiveFile();
+            const activeFile = dataSource.getActiveFile();
             if (!activeFile) {
               return {
                 name: 'isCacheAvailable - Valid File',
@@ -366,7 +366,7 @@ export const TocIntegrationTest: React.FC = () => {
               };
             }
 
-            const cacheAvailable = service.isCacheAvailable(activeFile);
+            const cacheAvailable = dataSource.isCacheAvailable(activeFile);
 
             // Should return boolean
             if (typeof cacheAvailable !== 'boolean') {
@@ -404,7 +404,7 @@ export const TocIntegrationTest: React.FC = () => {
         test: async () => {
           const testStart = Date.now();
           try {
-            const markdownFiles = service.getMarkdownFiles();
+            const markdownFiles = dataSource.getMarkdownFiles();
 
             // Test cache availability on multiple files to see consistency
             const cacheResults = [];
@@ -412,8 +412,8 @@ export const TocIntegrationTest: React.FC = () => {
 
             for (let i = 0; i < sampleSize; i++) {
               const file = markdownFiles[i];
-              const cacheAvailable = service.isCacheAvailable(file);
-              const hasHeadings = service.extractHeadings(file).length > 0;
+              const cacheAvailable = dataSource.isCacheAvailable(file);
+              const hasHeadings = dataSource.extractHeadings(file).length > 0;
 
               cacheResults.push({
                 fileName: file.basename,
@@ -477,7 +477,7 @@ export const TocIntegrationTest: React.FC = () => {
         test: async () => {
           const testStart = Date.now();
           try {
-            const activeFile = service.getActiveFile();
+            const activeFile = dataSource.getActiveFile();
             if (!activeFile) {
               return {
                 name: 'getRawCache - Valid File',
@@ -487,8 +487,8 @@ export const TocIntegrationTest: React.FC = () => {
               };
             }
 
-            const rawCache = service.getRawCache(activeFile);
-            const cacheAvailable = service.isCacheAvailable(activeFile);
+            const rawCache = dataSource.getRawCache(activeFile);
+            const cacheAvailable = dataSource.isCacheAvailable(activeFile);
 
             // If cache is available, rawCache should not be null
             if (cacheAvailable && rawCache === null) {
@@ -539,7 +539,7 @@ export const TocIntegrationTest: React.FC = () => {
         test: async () => {
           const testStart = Date.now();
           try {
-            const activeFile = service.getActiveFile();
+            const activeFile = dataSource.getActiveFile();
 
             // Can be null or TFile - both are valid
             const isValidResult = activeFile === null ||
@@ -581,7 +581,7 @@ export const TocIntegrationTest: React.FC = () => {
         test: async () => {
           const testStart = Date.now();
           try {
-            const markdownFiles = service.getMarkdownFiles();
+            const markdownFiles = dataSource.getMarkdownFiles();
 
             if (!Array.isArray(markdownFiles)) {
               return {
@@ -641,14 +641,14 @@ export const TocIntegrationTest: React.FC = () => {
         test: async () => {
           const testStart = Date.now();
           try {
-            const markdownFiles = service.getMarkdownFiles();
+            const markdownFiles = dataSource.getMarkdownFiles();
 
             // Find a file with headings that might have special characters
             let testFile = null;
             let bestHeadings = [];
 
             for (const file of markdownFiles.slice(0, 10)) { // Check first 10 files
-              const headings = service.extractHeadings(file);
+              const headings = dataSource.extractHeadings(file);
               if (headings.length > 0) {
                 // Look for headings with special characters
                 const hasSpecialChars = headings.some(h =>
@@ -678,7 +678,7 @@ export const TocIntegrationTest: React.FC = () => {
               };
             }
 
-            const headings = service.extractHeadings(testFile);
+            const headings = dataSource.extractHeadings(testFile);
 
             // Test that special characters are preserved
             const specialCharHeadings = headings.filter(h => /[^\w\s\-_]/.test(h.heading));
@@ -736,7 +736,7 @@ export const TocIntegrationTest: React.FC = () => {
         test: async () => {
           const testStart = Date.now();
           try {
-            const markdownFiles = service.getMarkdownFiles();
+            const markdownFiles = dataSource.getMarkdownFiles();
 
             // Find the largest markdown file
             let largestFile = null;
@@ -758,7 +758,7 @@ export const TocIntegrationTest: React.FC = () => {
               };
             }
 
-            const metadata = service.extractFileMetadata(largestFile);
+            const metadata = dataSource.extractFileMetadata(largestFile);
 
             if (!metadata) {
               return {
@@ -874,9 +874,9 @@ export const TocIntegrationTest: React.FC = () => {
   return (
     <div className="toc-integration-test" style={{ padding: '16px', fontSize: '14px' }}>
       <div style={{ marginBottom: '16px' }}>
-        <h3>Task 2.2: ObsidianDataService Unit Tests</h3>
+        <h3>Task 2.2: ObsidianDataSource Unit Tests</h3>
         <p style={{ marginBottom: '12px', color: 'var(--text-muted)', fontSize: '14px' }}>
-          Testing 11 unit tests for ObsidianDataService with real vault files and type validation
+          Testing 11 unit tests for ObsidianDataSource with real vault files and type validation
         </p>
         <div style={{ marginBottom: '12px' }}>
           <button

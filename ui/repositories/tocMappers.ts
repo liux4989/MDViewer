@@ -1,6 +1,6 @@
 /**
- * Data Transformation Utilities for TOC System - Task 2.3
- * Provides functions to convert between Obsidian data formats and TOC data formats
+ * TOC Data Mappers - Phase 1 Refactor
+ * Pure transformation functions to convert between Obsidian data formats and TOC domain models
  */
 
 import type { ObsidianHeading, ObsidianFile, TocHeading, TocFile } from '../schemas/toc';

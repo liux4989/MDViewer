@@ -5,9 +5,31 @@
 
 import type { TFile } from 'obsidian';
 import type { IObsidianDataSource } from '../datasources/obsidianDataSource';
-import { obsidianToTocFile, validateTocFile } from '../repositories/tocMappers';
+import { obsidianToTocFile, validateTocFile } from './tocMappers';
 import type { TocData, TocFile } from '../schemas/toc';
-import type { ITocRepository, TocDataServiceError, Result } from '../repositories/tocRepository';
+/**
+ * Result type for repository operations
+ */
+export type Result<T, E> = { ok: true; data: T } | { ok: false; error: E };
+
+/**
+ * Error types for TOC repository operations
+ */
+export interface TocDataServiceError {
+  message: string;
+  code: 'NO_ACTIVE_FILE' | 'FILE_NOT_FOUND' | 'INVALID_DATA' | 'TRANSFORMATION_FAILED' | 'VALIDATION_FAILED';
+  originalError?: Error;
+}
+
+/**
+ * Interface for TOC repository operations
+ * Provides domain-facing data operations with caching and error handling
+ */
+export interface ITocRepository {
+  getCurrentFileHeadings(): Promise<Result<TocData, TocDataServiceError>>;
+  getFileHeadings(filePath: string): Promise<Result<TocFile, TocDataServiceError>>;
+  clearCache(): void;
+}
 
 export class TocRepository implements ITocRepository {
   private cache = new Map<string, TocFile>();
