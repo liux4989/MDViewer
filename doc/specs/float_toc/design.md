@@ -46,7 +46,10 @@ we will use the congnitive load theory to determine the height of the TOC
 
 
 ## Constraints
-- tech-stack : React,Uses Obsidian CSS variables, tanstack-query for statemanaement, vitest 
+- tech-stack : React,Uses Obsidian CSS variables,  vitest 
+- state management : 
+    - Start with Context + Hook if global state is small and there is zero dependencies.
+	- Switch to Zustand if re-render pain or contexts are multiplying.
 - Resources: @Obsidian Docs
 
 

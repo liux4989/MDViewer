@@ -133,3 +133,107 @@ Task History : Execute task2(e65ea9e2-c854-4ddb-a915-dd5140d52b8f)
 
 
 
+
+# Phase 4: State Handling
+
+## Task 4.1: Define UI State & Store Contract [AI]
+
+### Subtasks:
+1. Define core UI state shape
+   - `mode`: "compact" | "detail"
+   - `activeFile`: string | null
+   - `activeHeadingId`: string | null
+   - `headings`: TocHeading[]
+2. Define `ITocUIStore` contract (state, actions, selectors)
+   - Actions: `toggleMode()`, `setActiveFile()`, `setActiveHeading()`, `setHeadings()`, `navigate()`
+   - Selectors typed and memo-friendly
+3. Provide facade hooks depending only on `ITocUIStore`
+   - `ui/hooks/`: `useTocState()`, `useActiveHeading()`, `useTocMode()`, `useNavigate()`
+4. Add Zod schema to validate state shape
+   - Extend `ui/schemas/toc.ts` or `ui/schemas/index.ts` as needed
+5. Document contract and exported hooks
+
+### Success Criteria:
+- ✅ Contract is type-safe and reusable across UI
+- ✅ Unit tests validate initial state and selectors
+- ✅ Components import hooks only; no coupling to implementation
+
+
+## Task 4.2: State Implement  [AI]
+
+### Subtasks:
+1. Create store provider `ui/stores/tocUIStore.tsx`
+   - Implement `ITocUIStore` contract using React Context + Reducer
+   - Export `TocUIProvider` that sets `_setTocUIContext()` for facade hooks
+   - Accept optional dependencies: `navigator: IObsidianNavigator`
+2. Implement pure reducer `ui/stores/tocUIReducer.ts`
+   - Handle actions: `toggleMode`, `setActiveFile`, `setActiveHeading`, `setHeadings`
+   - Derive next state immutably; no side-effects
+   - Use `createInitialTocUIState()` for initial state
+3. Wire navigation actions in store
+   - `navigate(id: string)`: set active heading, call `navigator.goToLine(line)` if provided
+   - `navigateDirection(dir)`: compute target inline, then delegate to `navigate()`
+   - No repository calls here (effects handle data refresh)
+5. Provider value stability & performance
+   - Memoize action creators with `useCallback`
+   - Memoize context value with `useMemo` to minimize re-renders
+6. Unit tests (Vitest)
+   - Reducer: initial state, each action, immutability
+   - Navigation helpers: next/prev/parent/child across boundaries/levels
+   - Store actions: `navigate`/`navigateDirection` with mocked `IObsidianNavigator`
+   - No DOM or Obsidian runtime dependencies
+7. Types & validation
+   - Reuse `TocUIState`, `ITocUIStore`
+   - Optional runtime check with `validateTocUIState()` in dev-only paths
+
+### Success Criteria:
+- ✅ Store provider compiles and satisfies `ITocUIStore`
+- ✅ Reducer is pure, fully unit-tested
+- ✅ Navigation actions work for linear and nested headings with boundaries
+- ✅ `TocUIProvider` integrates with facade hooks via `_setTocUIContext`
+- ✅ Tests run without DOM/Obsidian runtime
+
+### Deliverables:
+- `ui/stores/tocUIStore.tsx` (provider + wiring)
+- `ui/stores/tocUIReducer.ts` (pure reducer + types)
+- Tests under `src/test/` for reducer, navigation, and actions
+
+
+## Task 4.3: Side-Effects & Obsidian Sync [AI]
+
+### Subtasks:
+1. ✅ **COMPLETED**: Create event abstraction layer (`ui/datasources/obsidianEvents.ts`)
+   - `IObsidianEvents` interface for decoupling business logic from Obsidian runtime
+   - `ObsidianEvents` implementation with proper debouncing and cleanup
+   - File change events: `onFileOpen()`, `onFileChanged()` 
+   - Editor events: `onEditorScrollStart()`, `onEditorScrollStop()`, `onEditorChangeIdle()`
+
+2. ✅ **COMPLETED**: Implement effects coordination service (`ui/services/tocSyncEffects.ts`)
+   - `TocSyncEffects` class that wires events to store and repository
+   - **File change side effects**: Reset mode to "compact" and refresh headings
+   - **Scroll side effects**: Switch to "compact" mode during scrolling, update active heading when stopped
+   - **Edit side effects**: Update heading cache when user finishes editing (debounced)
+   - Dependency injection pattern for testability
+
+3. ✅ **COMPLETED**: Create viewport analysis utilities (`ui/services/headingViewport.ts`)
+   - `computeActiveHeadingFromViewport()` pure function for active heading detection
+   - `computeActiveHeadingEnhanced()` with scroll direction awareness
+   - No Obsidian API dependencies for easy unit testing
+   - Fallback strategies for edge cases
+
+4. ✅ **COMPLETED**: Update architecture documentation
+   - Added Services Layer section with event synchronization details
+   - Updated data flow diagram to show event-driven architecture
+   - Documented integration wiring and component access patterns
+   - Created decision record for architectural choice
+
+### Success Criteria:
+- ✅ Event abstraction layer isolates Obsidian runtime coupling
+- ✅ Effects service coordinates events with store and repository
+- ✅ Pure functions enable unit testing without Obsidian runtime
+- ✅ Clear separation of concerns across all layers
+- ✅ Documentation reflects new architecture
+
+
+
+

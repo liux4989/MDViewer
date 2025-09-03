@@ -5,22 +5,22 @@
 
 
 # Phase2 : Data Layer
-- create Data Interface
-- obsidian integration:  exposed apis for data building
-- convert obsidian data to data interface
+
+- obsidian raw data provider: 
+
 **Dependencies**:
 - Phase 1
 
-# Phase 3: Repository Layer
-- create domain specific model: **tocHeading**
-- exposed api: getHeading(), 
+# Phase 3: Domain Layer
+- transform obsidian raw data to domain specific model
+
 **Dependencies**:
 - Phase 2
 
-### Phase 4 : Business Logic Layer
-- create a model to keep trck of toc state: **TocState**
-- exposed user input events : changeMode
-- exposed observable events :  fileChanged
+### Phase 4 : State Handling
+- define ui state: mode, activeHeading, activeFile, headings
+- business logic for current feature : toggleMode(),  Navigate()
+
 
 # Phase 4: UI Layer's Preview Mode
 **Goal**: Implement the toc 's preview mode
