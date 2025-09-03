@@ -4,7 +4,9 @@
  */
 
 import type { App, TFile } from 'obsidian';
+import { MarkdownView } from 'obsidian';
 import type { ObsidianFile, ObsidianHeading } from '../schemas/toc';
+import type { IObsidianNavigator } from './navigator';
 
 /**
  * Interface for Obsidian data source operations
@@ -23,7 +25,7 @@ export interface IObsidianDataSource {
  * Implementation of Obsidian data source
  * Provides direct access to Obsidian APIs
  */
-export class ObsidianDataSource implements IObsidianDataSource {
+export class ObsidianDataSource implements IObsidianDataSource, IObsidianNavigator {
   constructor(private app: App) {}
 
   /**
@@ -94,5 +96,28 @@ export class ObsidianDataSource implements IObsidianDataSource {
   getRawCache(file: TFile | null): any {
     if (!file) return null;
     return this.app.metadataCache.getFileCache(file);
+  }
+
+  /**
+   * Navigate to a specific line in the active editor
+   * @param line - The line number to navigate to (0-indexed)
+   * @param options - Optional navigation options
+   * @param options.center - Whether to center the line in the viewport (default: true)
+   */
+  goToLine(line: number, options?: { center?: boolean }): void {
+    const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+    if (!view) return;
+    
+    const editor = view.editor;
+    const targetLine = Math.max(0, Math.floor(line));
+    
+    // Set cursor to the target line
+    editor.setCursor({ line: targetLine, ch: 0 });
+    
+    // Scroll the line into view
+    editor.scrollIntoView(
+      { from: { line: targetLine, ch: 0 }, to: { line: targetLine, ch: 0 } },
+      options?.center ?? true
+    );
   }
 }
