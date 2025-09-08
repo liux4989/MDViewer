@@ -2,6 +2,7 @@ import React from 'react';
 import { TocUIProvider } from './stores/tocUIStore';
 import TocContainer from './components/TocContainer';
 import { useObsidianApp } from './ObsidianAppContext';
+import { ObsidianDataSource } from './datasources/obsidianDataSource';
 
 interface AppProps {
 	floatingMode?: boolean;
@@ -9,11 +10,12 @@ interface AppProps {
 
 const App: React.FC<AppProps> = ({ floatingMode = false }) => {
 	const app = useObsidianApp();
+	const navigator = new ObsidianDataSource(app);
 
 	// If in floating mode, only render the TOC
 	if (floatingMode) {
 		return (
-			<TocUIProvider app={app}>
+			<TocUIProvider app={app} navigator={navigator}>
 				<TocContainer visible={true} />
 			</TocUIProvider>
 		);

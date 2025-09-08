@@ -74,7 +74,7 @@ export function TocUIProvider({ children, app, navigator }: TocUIProviderProps) 
   const navigate = useCallback((headingId: string) => {
     // Update state first
     dispatch({ type: 'NAVIGATE_TO_HEADING', payload: headingId });
-    
+
     // Then navigate in Obsidian if navigator is available
     if (navigator) {
       const heading = state.headings.find(h => h.id === headingId);
