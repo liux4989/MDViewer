@@ -33,5 +33,206 @@
 	opacity: 0.8;
 }
 
+/* ===== TOC Compact Mode Styles (Line Preview) ===== */
 
+.toc-compact-view {
+	width: 100%;
+	max-width: 120px;
+	/* Narrower for line preview */
+	min-width: 80px;
+}
 
+.toc-compact-lines {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	/* Space between lines */
+	margin: 0;
+	padding: 4px;
+	align-items: flex-start;
+}
+
+.toc-compact-line {
+	height: 2px;
+	/* Thin lines representing headings */
+	background-color: var(--text-faint);
+	border-radius: 1px;
+	transition: background-color 0.2s ease, height 0.1s ease;
+	min-width: 20px;
+	/* Minimum visible line */
+	max-width: 100%;
+}
+
+/* Level-specific line styling */
+.toc-compact-line.toc-level-1 {
+	height: 3px;
+	/* Slightly thicker for H1 */
+	background-color: var(--text-muted);
+}
+
+.toc-compact-line.toc-level-2 {
+	height: 2px;
+	background-color: var(--text-faint);
+	margin-left: 4px;
+	/* Slight indent */
+}
+
+.toc-compact-line.toc-level-3,
+.toc-compact-line.toc-level-4,
+.toc-compact-line.toc-level-5,
+.toc-compact-line.toc-level-6 {
+	height: 1px;
+	/* Thinner for deeper levels */
+	background-color: var(--text-faint);
+	margin-left: 8px;
+	/* More indent */
+	opacity: 0.7;
+}
+
+/* Active heading highlight */
+.toc-compact-line.toc-compact-active {
+	background-color: var(--text-accent);
+	height: 3px;
+	/* Slightly thicker when active */
+	box-shadow: 0 0 3px var(--text-accent);
+}
+
+.toc-compact-line.toc-compact-active.toc-level-1 {
+	height: 4px;
+}
+
+.toc-compact-line.toc-compact-active.toc-level-2 {
+	height: 3px;
+}
+
+.toc-compact-line.toc-compact-active.toc-level-3,
+.toc-compact-line.toc-compact-active.toc-level-4,
+.toc-compact-line.toc-compact-active.toc-level-5,
+.toc-compact-line.toc-compact-active.toc-level-6 {
+	height: 2px;
+	opacity: 1;
+}
+
+/* Empty state */
+.toc-compact-empty {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: var(--size-2-2);
+	color: var(--text-faint);
+	font-size: var(--font-ui-smaller);
+	font-style: italic;
+	min-height: 32px;
+}
+
+.toc-compact-empty-message {
+	text-align: center;
+}
+
+/* Floating element specific styles */
+.toc-floating-container {
+	background-color: var(--background-primary-alt);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	box-shadow: var(--shadow-s);
+	padding: 6px;
+	max-height: 300px;
+	/* Compact height for floating */
+	overflow-y: auto;
+	backdrop-filter: blur(8px);
+	/* Position will be handled by the mount element */
+}
+
+.floating-toc-mount {
+	/* Mount point styles - positioned by TocFloating component */
+	pointer-events: auto;
+}
+
+/* ===== TOC Detail Mode Styles (Indented List) ===== */
+
+.toc-detail-view {
+	width: 100%;
+	min-width: 160px;
+}
+
+.toc-detail-list {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	margin: 0;
+	padding: 4px;
+}
+
+.toc-detail-item {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 6px;
+	border-radius: var(--radius-s);
+	color: var(--text-normal);
+	cursor: pointer;
+}
+
+.toc-detail-item:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.toc-detail-bullet {
+	width: 10px;
+	text-align: center;
+	color: var(--text-faint);
+}
+
+.toc-detail-text {
+	font-size: var(--font-ui-small);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.toc-detail-active {
+	color: var(--text-accent);
+	background-color: color-mix(in srgb, var(--interactive-accent) 8%, transparent);
+}
+
+/* Level-based indentation */
+.toc-detail-item.toc-level-1 {
+	padding-left: 4px;
+	font-weight: 600;
+}
+
+.toc-detail-item.toc-level-2 {
+	padding-left: 12px;
+}
+
+.toc-detail-item.toc-level-3 {
+	padding-left: 20px;
+}
+
+.toc-detail-item.toc-level-4 {
+	padding-left: 28px;
+}
+
+.toc-detail-item.toc-level-5 {
+	padding-left: 36px;
+}
+
+.toc-detail-item.toc-level-6 {
+	padding-left: 44px;
+}
+
+/* Empty state */
+.toc-detail-empty {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: var(--size-2-2);
+	color: var(--text-faint);
+	font-size: var(--font-ui-smaller);
+	font-style: italic;
+	min-height: 32px;
+}
+
+.toc-detail-empty-message {
+	text-align: center;
+}

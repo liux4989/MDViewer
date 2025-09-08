@@ -12,8 +12,9 @@ In state design phase, we require navigation helpers operating on `TocHeading[]`
 1. Expose Obsidian navigation APIs directly in the data layer
 2. Invoke Obsidian APIs directly in state management
 
-## Chosen Approach
-**Option 1**: Expose navigation through data layer abstraction
+# Discovery
+
+## Option1 -- Expose navigation through data layer abstraction
 
 ### Implementation Details
 - **Interface**: `ui/datasources/navigator.ts` - `IObsidianNavigator.goToLine()`
@@ -27,19 +28,13 @@ In state design phase, we require navigation helpers operating on `TocHeading[]`
 4. **Clean Interface**: Simple line-based navigation contract for domain logic
 5. **Consistency**: Follows established repository pattern and data layer architecture
 
-### Alternative Considered
-**Option 2**: Direct Obsidian API calls in state management
+## Option2 -- Direct Obsidian API calls in state management
 - **Pros**: Simpler implementation, fewer files
 - **Cons**: Couples state logic to Obsidian internals, harder to test, violates separation of concerns
 
-## Decision
+# Decision
 we choose option 1 because it is follow our layered architecture design.
 
-### Implemenation detail
-- Navigation uses line numbers for precision (aligned with line-based heading matching strategy)
-- Cursor positioning and viewport scrolling are handled together for smooth user experience
-- Graceful fallback when no active MarkdownView exists
-- Interface designed for future extensibility (e.g., pane targeting, reveal strategies)
 
 ## Future Considerations
 - If navigation logic grows complex, consider extracting `ObsidianNavigator` as separate class

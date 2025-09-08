@@ -29,7 +29,7 @@
 - Preview mode styling
 - Preview mode functionality : switch mode
 **Dependencies**:
-- Phase 4
+- Phase 3
 
 # Phase 5: UI Layer's Detail Mode
 **Goal**: Implement the toc 's detail mode
@@ -38,7 +38,7 @@
 - Detail mode styling
 - Detail mode functionality : switch mode, navigate to article
 **Dependencies**:
-- Phase 4
+- Phase 3
 
 
 # Improvement Phase:

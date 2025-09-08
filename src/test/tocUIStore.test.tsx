@@ -10,10 +10,24 @@ import { TocUIProvider } from '../../ui/stores/tocUIStore';
 import { useTocState } from '../../ui/hooks/useTocState';
 import type { TocHeading } from '../../ui/schemas/toc';
 import type { IObsidianNavigator } from '../../ui/datasources/navigator';
+import type { App } from 'obsidian';
 
 // Mock navigator
 const createMockNavigator = (): IObsidianNavigator => ({
   goToLine: vi.fn()
+});
+
+// Mock App for testing
+const createMockApp = (): Partial<App> => ({
+  workspace: {
+    containerEl: document.createElement('div'),
+    onLayoutReady: vi.fn(),
+    getActiveFile: vi.fn(),
+  } as any,
+  vault: {
+    on: vi.fn(),
+    off: vi.fn(),
+  } as any,
 });
 
 // Test data
@@ -25,15 +39,17 @@ const mockHeadings: TocHeading[] = [
 
 describe('TocUIProvider', () => {
   let mockNavigator: IObsidianNavigator;
+  let mockApp: Partial<App>;
   
   beforeEach(() => {
     mockNavigator = createMockNavigator();
+    mockApp = createMockApp();
   });
   
   it('should provide initial state', () => {
     const { result } = renderHook(() => useTocState(), {
       wrapper: ({ children }) => (
-        <TocUIProvider>{children}</TocUIProvider>
+        <TocUIProvider app={mockApp as App}>{children}</TocUIProvider>
       )
     });
     
@@ -46,7 +62,7 @@ describe('TocUIProvider', () => {
   it('should provide all required actions', () => {
     const { result } = renderHook(() => useTocState(), {
       wrapper: ({ children }) => (
-        <TocUIProvider>{children}</TocUIProvider>
+        <TocUIProvider app={mockApp as App}>{children}</TocUIProvider>
       )
     });
     
@@ -61,7 +77,7 @@ describe('TocUIProvider', () => {
   it('should provide all required selectors', () => {
     const { result } = renderHook(() => useTocState(), {
       wrapper: ({ children }) => (
-        <TocUIProvider>{children}</TocUIProvider>
+        <TocUIProvider app={mockApp as App}>{children}</TocUIProvider>
       )
     });
     
@@ -75,7 +91,7 @@ describe('TocUIProvider', () => {
     it('should toggle mode', () => {
       const { result } = renderHook(() => useTocState(), {
         wrapper: ({ children }) => (
-          <TocUIProvider>{children}</TocUIProvider>
+          <TocUIProvider app={mockApp as App}>{children}</TocUIProvider>
         )
       });
       
@@ -91,7 +107,7 @@ describe('TocUIProvider', () => {
     it('should set active file', () => {
       const { result } = renderHook(() => useTocState(), {
         wrapper: ({ children }) => (
-          <TocUIProvider>{children}</TocUIProvider>
+          <TocUIProvider app={mockApp as App}>{children}</TocUIProvider>
         )
       });
       
@@ -105,7 +121,7 @@ describe('TocUIProvider', () => {
     it('should set headings', () => {
       const { result } = renderHook(() => useTocState(), {
         wrapper: ({ children }) => (
-          <TocUIProvider>{children}</TocUIProvider>
+          <TocUIProvider app={mockApp as App}>{children}</TocUIProvider>
         )
       });
       
@@ -119,7 +135,7 @@ describe('TocUIProvider', () => {
     it('should navigate to heading with navigator', () => {
       const { result } = renderHook(() => useTocState(), {
         wrapper: ({ children }) => (
-          <TocUIProvider navigator={mockNavigator}>{children}</TocUIProvider>
+          <TocUIProvider app={mockApp as App} navigator={mockNavigator}>{children}</TocUIProvider>
         )
       });
       
@@ -140,7 +156,7 @@ describe('TocUIProvider', () => {
     it('should navigate without navigator', () => {
       const { result } = renderHook(() => useTocState(), {
         wrapper: ({ children }) => (
-          <TocUIProvider>{children}</TocUIProvider>
+          <TocUIProvider app={mockApp as App}>{children}</TocUIProvider>
         )
       });
       
@@ -160,7 +176,7 @@ describe('TocUIProvider', () => {
     it('should get active heading', () => {
       const { result } = renderHook(() => useTocState(), {
         wrapper: ({ children }) => (
-          <TocUIProvider>{children}</TocUIProvider>
+          <TocUIProvider app={mockApp as App}>{children}</TocUIProvider>
         )
       });
       
@@ -176,7 +192,7 @@ describe('TocUIProvider', () => {
     it('should check compact mode', () => {
       const { result } = renderHook(() => useTocState(), {
         wrapper: ({ children }) => (
-          <TocUIProvider>{children}</TocUIProvider>
+          <TocUIProvider app={mockApp as App}>{children}</TocUIProvider>
         )
       });
       
@@ -194,7 +210,7 @@ describe('TocUIProvider', () => {
     it('should get headings by level', () => {
       const { result } = renderHook(() => useTocState(), {
         wrapper: ({ children }) => (
-          <TocUIProvider>{children}</TocUIProvider>
+          <TocUIProvider app={mockApp as App}>{children}</TocUIProvider>
         )
       });
       
@@ -228,7 +244,7 @@ describe('TocUIProvider', () => {
       };
       
       const { rerender } = render(
-        <TocUIProvider>
+        <TocUIProvider app={mockApp as App}>
           <TestComponent />
         </TocUIProvider>
       );
@@ -237,7 +253,7 @@ describe('TocUIProvider', () => {
       
       // Re-render with same props should not cause child re-render
       rerender(
-        <TocUIProvider>
+        <TocUIProvider app={mockApp as App}>
           <TestComponent />
         </TocUIProvider>
       );

@@ -1,4 +1,4 @@
-import { App, Plugin, PluginSettingTab, Setting, ItemView, WorkspaceLeaf } from 'obsidian';
+import { App, Plugin, PluginSettingTab, Setting } from 'obsidian';
 import React from 'react';
 import { createRoot, Root } from 'react-dom/client';
 import AppComponent from './ui/App';
@@ -15,19 +15,30 @@ const DEFAULT_SETTINGS: MyPluginSettings = {
 export default class MyPlugin extends Plugin {
 	settings: MyPluginSettings = DEFAULT_SETTINGS;
 	root: Root | null = null;
+	tocContainer: HTMLElement | null = null;
+	isFloatingTocEnabled: boolean = false;
 
 	async onload() {
 		await this.loadSettings();
 
 		this.addSettingTab(new MyPluginSettingTab(this.app, this));
 
-		this.registerView(
-			'floating-toc-view',
-			(leaf) => new MyReactView(leaf, this)
-		);
+		// Add command to toggle floating TOC
+		this.addCommand({
+			id: 'toggle-floating-toc',
+			name: 'Toggle Floating TOC',
+			callback: () => {
+				this.toggleFloatingToc();
+			}
+		});
 
-		this.addRibbonIcon('list', 'Activate Floating TOC', () => {
-			this.activateView();
+		this.addRibbonIcon('list', 'Toggle Floating TOC', () => {
+			this.toggleFloatingToc();
+		});
+
+		// Initialize floating TOC when workspace is ready
+		this.app.workspace.onLayoutReady(() => {
+			this.initializeFloatingToc();
 		});
 	}
 
@@ -39,52 +50,70 @@ export default class MyPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 
-	async activateView() {
-		this.app.workspace.detachLeavesOfType('floating-toc-view');
-		await this.app.workspace.getRightLeaf(false)?.setViewState({
-			type: 'floating-toc-view',
-			active: true,
-		});
-		this.app.workspace.revealLeaf(
-			this.app.workspace.getLeavesOfType('floating-toc-view')[0]
-		);
-	}
-}
-
-class MyReactView extends ItemView {
-	plugin: MyPlugin;
-	root: Root | null = null;
-
-	constructor(leaf: WorkspaceLeaf, plugin: MyPlugin) {
-		super(leaf);
-		this.plugin = plugin;
+	toggleFloatingToc() {
+		this.isFloatingTocEnabled = !this.isFloatingTocEnabled;
+		if (this.isFloatingTocEnabled) {
+			this.showFloatingToc();
+		} else {
+			this.hideFloatingToc();
+		}
 	}
 
-	getViewType() {
-		return 'floating-toc-view';
+	initializeFloatingToc() {
+		// Create container element attached to workspace
+		this.tocContainer = document.createElement('div');
+		this.tocContainer.className = 'floating-toc-plugin-container';
+		this.tocContainer.style.position = 'fixed';
+		this.tocContainer.style.top = '80px';
+		this.tocContainer.style.right = '20px';
+		this.tocContainer.style.zIndex = '1000';
+		this.tocContainer.style.pointerEvents = 'auto';
+		
+		// Attach to workspace container (editor area)
+		const workspaceContainer = this.app.workspace.containerEl;
+		workspaceContainer.appendChild(this.tocContainer);
+
+		// Initialize React root
+		this.root = createRoot(this.tocContainer);
+		
+		// Start with TOC hidden
+		this.hideFloatingToc();
 	}
 
-	getDisplayText() {
-		return 'My React View';
-	}
-
-	async onOpen() {
-		const container = this.containerEl.children[1];
-		this.root = createRoot(container as HTMLElement);
+	showFloatingToc() {
+		if (!this.tocContainer || !this.root) return;
+		
+		this.tocContainer.style.display = 'block';
+		
+		// Render the floating TOC component
 		this.root.render(
 			React.createElement(ObsidianAppProvider, {
-				app: this.plugin.app,
-				children: React.createElement(AppComponent, null)
+				app: this.app,
+				children: React.createElement(AppComponent, { floatingMode: true })
 			})
 		);
 	}
 
-	async onClose() {
+	hideFloatingToc() {
+		if (!this.tocContainer) return;
+		this.tocContainer.style.display = 'none';
+	}
+
+	onunload() {
+		// Clean up
 		if (this.root) {
 			this.root.unmount();
+			this.root = null;
+		}
+		
+		if (this.tocContainer) {
+			this.tocContainer.remove();
+			this.tocContainer = null;
 		}
 	}
 }
+
+// Removed MyReactView - now using direct floating attachment to workspace
 
 
 

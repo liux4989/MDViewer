@@ -233,7 +233,45 @@ Task History : Execute task2(e65ea9e2-c854-4ddb-a915-dd5140d52b8f)
 - ✅ Pure functions enable unit testing without Obsidian runtime
 - ✅ Clear separation of concerns across all layers
 - ✅ Documentation reflects new architecture
+ 
 
+# Phase 5: UI Layer
 
+## Task 5.1: Compact Mode TOC UI [AI]
 
+### Subtasks:
+1. Design compact mode UI component structure
+   - Create `TocCompactView` component for minimal, read-only display
+   - Focus on space-efficient layout with no interactive elements
+   - Display only essential heading information (text and level indication)
+2. Implement compact mode styling
+   - Use Obsidian CSS variables for consistent theming
+   - Minimize vertical space usage with compact typography
+   - Add subtle level indentation or visual hierarchy
+   - Ensure readability in both light and dark themes
+3. Create compact mode component
+   - Build `ui/components/TocCompactView.tsx` with pure display logic
+   - Accept headings array and activeHeadingId as props
+   - Render headings in a space-efficient list format
+   - Highlight active heading with subtle visual indicator
+4. Integrate with existing architecture
+   - Connect to existing `useTocState()` and `useTocMode()` hooks
+   - Ensure proper re-rendering when state changes
+   - Add conditional rendering logic in main TOC component
 
+### Success Criteria:
+- ✅ Compact view displays headings in minimal space
+- ✅ No interactive elements (clicks, hovers, keyboard navigation)
+- ✅ Active heading is visually highlighted
+- ✅ Styling integrates seamlessly with Obsidian theme
+- ✅ Component is performant and re-renders efficiently
+- ✅ Floating TOC properly attaches to Obsidian workspace root split
+- ✅ **COMPLETED**: Task 4.4 finished and integrated
+
+### Deliverables:
+- ✅ `ui/components/TocCompactView.tsx` (compact display component)
+- ✅ `ui/components/TocView.tsx` (main TOC component with mode switching)
+- ✅ `ui/components/TocFloating.tsx` (floating overlay with workspace attachment)
+- ✅ `ui/components/TocDemo.tsx` (demo component with sample data)
+- ✅ Compact mode styles using Obsidian CSS variables
+- ✅ Integration with existing store and hooks architecture

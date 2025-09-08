@@ -1,46 +1,29 @@
 import React from 'react';
+import { TocUIProvider } from './stores/tocUIStore';
+import TocContainer from './components/TocContainer';
 import { useObsidianApp } from './ObsidianAppContext';
-import TocIntegrationTest from './components/TocIntegrationTest';
 
-const App: React.FC = () => {
+interface AppProps {
+	floatingMode?: boolean;
+}
+
+const App: React.FC<AppProps> = ({ floatingMode = false }) => {
 	const app = useObsidianApp();
-	const [showTest, setShowTest] = React.useState(false);
 
-	// Example of accessing Obsidian app properties
-	const activeFile = app.workspace.getActiveFile();
-	const vaultName = app.vault.getName();
+	// If in floating mode, only render the TOC
+	if (floatingMode) {
+		return (
+			<TocUIProvider app={app}>
+				<TocContainer visible={true} />
+			</TocUIProvider>
+		);
+	}
+	else {
+		return (
+			<h1> debug mode {floatingMode.toString()} </h1>
+		);
+	}
 
-	return (
-		<div className="floating-toc-view">
-			<h1>Floating TOC</h1>
-			<p>React scaffold initialized with Obsidian context.</p>
-			
-			<div className="ft-info" style={{ marginBottom: '16px' }}>
-				<p>Vault: {vaultName}</p>
-				<p>Active file: {activeFile?.basename || 'None'}</p>
-				<p>App context available: ✅</p>
-			</div>
-
-			<div style={{ marginBottom: '16px' }}>
-				<button
-					className="ft-button"
-					onClick={() => setShowTest(!showTest)}
-					style={{
-						padding: '8px 16px',
-						backgroundColor: 'var(--interactive-accent)',
-						color: 'var(--text-on-accent)',
-						border: 'none',
-						borderRadius: '4px',
-						cursor: 'pointer'
-					}}
-				>
-					{showTest ? 'Hide' : 'Show'} Task 2.2 Unit Tests
-				</button>
-			</div>
-
-			{showTest && <TocIntegrationTest />}
-		</div>
-	);
 };
 
 export default App;

@@ -19,10 +19,10 @@ export type TocMode = 'compact' | 'detail';
 function getCurrentHeading(scrollLine: number, headings: TocHeading[]): TocHeading | undefined {
   return headings.find((heading, index) => {
     const startLine = heading.line;
-    const endLine = index < headings.length - 1 
+    const endLine = index < headings.length - 1
       ? headings[index + 1].line - 1
       : Number.MAX_SAFE_INTEGER;
-    
+
     return scrollLine >= startLine && scrollLine <= endLine;
   });
 }
@@ -52,7 +52,7 @@ export class TocSyncEffects {
     private events: IObsidianEvents,
     private repository: ITocRepository,
     private store: ITocUIStore
-  ) {}
+  ) { }
 
   /**
    * Initialize all event listeners and side effects
@@ -64,19 +64,21 @@ export class TocSyncEffects {
     // Side Effect 1: File changes → reset mode and refresh headings
     const handleFileRefresh = async (path: string) => {
       try {
-        // Get updated headings from repository (this will refresh cache internally)
-        const result = await this.repository.getFileHeadings(path);
-        if (result.ok) {
-          const headings = result.data.headings;
-          
-          // Update store with new data and reset to compact mode
-          this.store.setHeadings(headings);
-          this.store.setMode('compact');
-          this.store.setActiveFile(path);
-          this.store.setActiveHeading(null); // Reset active heading
-        } else {
-          console.error('Failed to get file headings:', result.error?.message || 'Unknown error');
-          return;
+        const { activeFile } = this.store.getState();
+        if (activeFile != path) {
+          const result = await this.repository.getCurrentFileHeadings();
+          if (result.ok) {
+            const headings = result.data.headings;
+
+            // Update store with new data and reset to compact mode
+            this.store.setHeadings(headings);
+            this.store.setMode('compact');
+            this.store.setActiveFile(path);
+            this.store.setActiveHeading(null); // Reset active heading
+          } else {
+            console.error('Failed to get current file headings:', result.error?.message || 'Unknown error');
+            return;
+          }
         }
       } catch (error) {
         console.error('Failed to refresh TOC data for file:', path, error);
@@ -100,18 +102,18 @@ export class TocSyncEffects {
           const { activeFile } = this.store.getState();
           if (!activeFile) return;
 
-          // Get current headings from cache
-          const result = await this.repository.getFileHeadings(activeFile);
+          // Get current headings from cache (optimized method for active file)
+          const result = await this.repository.getCurrentFileHeadings();
           if (result.ok) {
             const headings = result.data.headings;
-            
+
             // Calculate which heading is active based on current scroll position
             // Uses Line-Based Position Tracking as decided in @match_heading.md
             const currentScrollLine = this.events.getCurrentScrollLine();
-            const activeHeading = currentScrollLine !== null 
+            const activeHeading = currentScrollLine !== null
               ? getCurrentHeading(currentScrollLine, headings)
               : (headings.length > 0 ? headings[0] : undefined);
-            
+
             // Update active heading without changing mode
             this.store.setActiveHeading(activeHeading?.id ?? null);
           } else {
@@ -129,15 +131,15 @@ export class TocSyncEffects {
       this.events.onEditorChangeIdle(async (path) => {
         try {
           const { activeFile } = this.store.getState();
-          
+
           // Only update if this is the currently active file
           if (activeFile === path) {
             // Refresh cache in background by clearing and re-fetching
             this.repository.clearCache();
-            const result = await this.repository.getFileHeadings(path);
+            const result = await this.repository.getCurrentFileHeadings();
             if (result.ok) {
               const headings = result.data.headings;
-              
+
               // Update headings but preserve current mode and active heading
               // This ensures editing doesn't disrupt user's current interaction
               this.store.setHeadings(headings);

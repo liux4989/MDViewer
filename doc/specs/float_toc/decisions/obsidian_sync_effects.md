@@ -1,13 +1,13 @@
 # Decision: Event-Driven Obsidian Synchronization Architecture
 
-## Context
+# Context
 
 The TOC plugin needs to respond to three main Obsidian events:
 1. File changes → reset mode and update headings
 2. Editor scrolling → switch to compact mode and track active heading  
 3. User editing → update heading cache when editing completes
 
-## Decision
+# Decision
 
 We implement a **Services Layer** with event abstraction to maintain separation of concerns:
 

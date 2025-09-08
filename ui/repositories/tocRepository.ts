@@ -4,6 +4,7 @@
  */
 
 import type { TFile } from 'obsidian';
+import { TFile as TFileClass } from 'obsidian';
 import type { IObsidianDataSource } from '../datasources/obsidianDataSource';
 import { obsidianToTocFile, validateTocFile } from './tocMappers';
 import type { TocData, TocFile } from '../schemas/toc';
@@ -27,7 +28,6 @@ export interface TocDataServiceError {
  */
 export interface ITocRepository {
   getCurrentFileHeadings(): Promise<Result<TocData, TocDataServiceError>>;
-  getFileHeadings(filePath: string): Promise<Result<TocFile, TocDataServiceError>>;
   clearCache(): void;
 }
 
@@ -54,10 +54,27 @@ export class TocRepository implements ITocRepository {
         };
       }
 
-      const result = await this.getFileHeadings(activeFile.path);
+      // Check cache first using the file path
+      const cacheKey = activeFile.path;
+      const cached = this.cache.get(cacheKey);
+      if (cached) {
+        const tocData: TocData = {
+          file: cached,
+          headings: cached.headings,
+          activeHeading: undefined
+        };
+        return { ok: true, data: tocData };
+      }
+
+      // Process the active file directly (no file system scan needed)
+      const result = await this.processFileHeadings(activeFile);
+
       if (!result.ok) {
         return result;
       }
+
+      // Cache the result
+      this.cache.set(cacheKey, result.data);
 
       // Create TocData structure
       const tocData: TocData = {
@@ -79,53 +96,6 @@ export class TocRepository implements ITocRepository {
     }
   }
 
-  /**
-   * Get headings for a specific file by path
-   * @param filePath - Path to the markdown file
-   * @returns Promise resolving to Result with TocFile or error
-   */
-  async getFileHeadings(filePath: string): Promise<Result<TocFile, TocDataServiceError>> {
-    try {
-      // Check cache first
-      const cached = this.cache.get(filePath);
-      if (cached) {
-        return { ok: true, data: cached };
-      }
-
-      // Find the file in the vault - we'll need to get the App instance somehow
-      // For now, we'll use a simple approach and assume files are passed by path
-      const markdownFiles = this.dataSource.getMarkdownFiles();
-      const foundFile = markdownFiles.find(f => f.path === filePath || f.basename === filePath);
-
-      if (!foundFile) {
-        return {
-          ok: false,
-          error: {
-            message: `File not found: ${filePath}`,
-            code: 'FILE_NOT_FOUND'
-          }
-        };
-      }
-
-      const result = await this.processFileHeadings(foundFile);
-
-      // Cache successful results
-      if (result.ok) {
-        this.cache.set(filePath, result.data);
-      }
-
-      return result;
-    } catch (error) {
-      return {
-        ok: false,
-        error: {
-          message: `Failed to get file headings for ${filePath}`,
-          code: 'TRANSFORMATION_FAILED',
-          originalError: error instanceof Error ? error : new Error(String(error))
-        }
-      };
-    }
-  }
 
 
 
