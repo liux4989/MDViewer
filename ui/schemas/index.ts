@@ -8,20 +8,20 @@ export type { TocHeading, TocFile, TocData } from './toc';
 // Obsidian Integration Interfaces
 export type { ObsidianFile, ObsidianHeading } from './toc';
 
-// UI State and Store Contract
+// Mode and Interaction State
 export type { 
-  TocUIState, 
   TocUIMode, 
-  TocUIActions, 
-  TocUISelectors, 
-  ITocUIStore 
-} from './uiState';
+  TocInteractionState,
+  TocModeActions,
+  TocModeSelectors,
+  ITocModeStore
+} from './mode';
 export { 
-  TocUIModeSchema, 
-  TocHeadingSchema, 
-  TocUIStateSchema, 
-  validateTocUIState, 
-  createInitialTocUIState 
-} from './uiState';
+  TocUIModeSchema,
+  TocInteractionStateSchema,
+  computeDisplayMode,
+  validateTocInteractionState,
+  createInitialInteractionState
+} from './mode';
 
 export { ObsidianDataSource, type IObsidianDataSource } from '../datasources/obsidianDataSource';

@@ -5,9 +5,8 @@
 
 import type { App, TFile } from 'obsidian';
 import { MarkdownView } from 'obsidian';
-import type { ObsidianFile, ObsidianHeading, TocData, TocFile } from '../schemas/toc';
+import type { ObsidianFile, ObsidianHeading } from '../schemas/toc';
 import type { IObsidianNavigator } from './navigator';
-import { obsidianToTocFile, validateTocFile } from '../utils/tocTransformers';
 
 /**
  * Interface for Obsidian data source operations
@@ -20,9 +19,6 @@ export interface IObsidianDataSource {
   extractHeadings(file: TFile | null): ObsidianHeading[];
   isCacheAvailable(file: TFile | null): boolean;
   getRawCache(file: TFile | null): any;
-  // New methods for TOC data operations
-  getCurrentFileTocData(): TocData | null;
-  getFileTocData(file: TFile | null): TocFile | null;
 }
 
 /**
@@ -125,48 +121,4 @@ export class ObsidianDataSource implements IObsidianDataSource, IObsidianNavigat
     );
   }
 
-  /**
-   * Get TOC data for the currently active file
-   * Combines file metadata and headings extraction with transformation
-   * @returns TocData object or null if no active file or transformation fails
-   */
-  getCurrentFileTocData(): TocData | null {
-    const activeFile = this.getActiveFile();
-    if (!activeFile) return null;
-
-    const tocFile = this.getFileTocData(activeFile);
-    if (!tocFile) return null;
-
-    return {
-      file: tocFile,
-      headings: tocFile.headings,
-      activeHeading: undefined // Will be set by UI components
-    };
-  }
-
-  /**
-   * Get TOC data for a specific file
-   * Transforms Obsidian file data into TOC format with validation
-   * @param file - The Obsidian file to process
-   * @returns TocFile object or null if transformation fails
-   */
-  getFileTocData(file: TFile | null): TocFile | null {
-    if (!file) return null;
-
-    // Extract raw data from Obsidian
-    const obsidianFile = this.extractFileMetadata(file);
-    if (!obsidianFile) return null;
-
-    const obsidianHeadings = this.extractHeadings(file);
-    if (!Array.isArray(obsidianHeadings)) return null;
-
-    // Transform to TOC format
-    const tocFile = obsidianToTocFile(obsidianFile, obsidianHeadings);
-    if (!tocFile) return null;
-
-    // Validate the transformed data
-    if (!validateTocFile(tocFile)) return null;
-
-    return tocFile;
-  }
 }

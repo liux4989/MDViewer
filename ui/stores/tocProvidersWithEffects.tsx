@@ -8,7 +8,9 @@ import type { App } from 'obsidian';
 import { TocProviders } from './tocProvider';
 import { TocProvider } from './tocStore';
 import { TocModeProvider } from './tocModeStore';
-import { TocSyncEffects, type ITocStoreAdapter, type ITocModeStoreAdapter } from '../services/tocSyncEffects';
+import { TocServiceCoordinator } from '../services/tocServiceCoordinator';
+import type { ITocStoreAdapter } from '../services/tocFileService';
+import type { ITocModeStoreAdapter } from '../services/tocScrollService';
 import { ObsidianDataSource } from '../datasources/obsidianDataSource';
 import { ObsidianEvents } from '../datasources/obsidianEvents';
 import type { IObsidianNavigator } from '../datasources/navigator';
@@ -33,10 +35,11 @@ export interface TocProvidersWithEffectsProps {
 function TocEffectsIntegration({ app }: { app: App }) {
   const toc = useToc();
   const mode = useTocMode();
-  const syncEffectsRef = useRef<TocSyncEffects | null>(null);
+  const serviceCoordinatorRef = useRef<TocServiceCoordinator | null>(null);
   const disposerRef = useRef<(() => void) | null>(null);
 
   // Create stable store adapters for effects
+  // Note: Don't include state values in dependencies to avoid infinite re-renders
   const tocStoreAdapter = useMemo((): ITocStoreAdapter => ({
     getState: () => ({
       activeFile: toc.activeFile,
@@ -46,40 +49,30 @@ function TocEffectsIntegration({ app }: { app: App }) {
     setActiveFile: toc.setActiveFile,
     setHeadings: toc.setHeadings,
     setActiveHeading: toc.setActiveHeading
-  }), [toc.activeFile, toc.activeHeadingId, toc.headings, toc.setActiveFile, toc.setHeadings, toc.setActiveHeading]);
+  }), [toc.setActiveFile, toc.setHeadings, toc.setActiveHeading]);
 
   const modeStoreAdapter = useMemo((): ITocModeStoreAdapter => ({
     setScrolling: mode.setScrolling
   }), [mode.setScrolling]);
 
-  // Initialize data sources and effects once
-  const { dataSource, events } = useMemo(() => {
+  // Initialize data sources and service coordinator once
+  const { dataSource, events, serviceCoordinator } = useMemo(() => {
     const dataSource = new ObsidianDataSource(app);
     const events = new ObsidianEvents(app);
-    return { dataSource, events };
-  }, [app]);
+    const serviceCoordinator = new TocServiceCoordinator(
+      events,
+      dataSource,
+      tocStoreAdapter,
+      modeStoreAdapter
+    );
+    return { dataSource, events, serviceCoordinator };
+  }, [app, tocStoreAdapter, modeStoreAdapter]);
 
-  // Initialize sync effects and load initial data
+  // Initialize service coordinator once
   useEffect(() => {
-    // Initialize sync effects
-    syncEffectsRef.current = new TocSyncEffects(events, dataSource, tocStoreAdapter, modeStoreAdapter);
-    disposerRef.current = syncEffectsRef.current.init();
-
-    // Load initial data for current file
-    const loadInitialData = async () => {
-      const activeFile = dataSource.getActiveFile();
-      if (activeFile) {
-        const tocData = dataSource.getCurrentFileTocData();
-        if (tocData) {
-          toc.setHeadings(tocData.headings);
-          toc.setActiveFile(activeFile.path);
-        } else {
-          console.error('Failed to load initial TOC data');
-        }
-      }
-    };
-
-    loadInitialData();
+    // Initialize service coordinator
+    serviceCoordinatorRef.current = serviceCoordinator;
+    disposerRef.current = serviceCoordinator.init();
 
     // Cleanup on unmount
     return () => {
@@ -87,9 +80,20 @@ function TocEffectsIntegration({ app }: { app: App }) {
         disposerRef.current();
         disposerRef.current = null;
       }
-      syncEffectsRef.current = null;
+      serviceCoordinatorRef.current = null;
     };
-  }, [dataSource, events, tocStoreAdapter, modeStoreAdapter, toc]);
+  }, [serviceCoordinator]);
+
+  // Load initial data once on mount
+  useEffect(() => {
+    const loadInitialData = async () => {
+      if (serviceCoordinatorRef.current) {
+        await serviceCoordinatorRef.current.loadInitialData();
+      }
+    };
+
+    loadInitialData();
+  }, []);
 
   return null; // This component only handles effects, doesn't render anything
 }

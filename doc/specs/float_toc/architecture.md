@@ -23,6 +23,9 @@ interface IObsidianDataSource {
   extractHeadings(file: TFile | null): ObsidianHeading[];
   isCacheAvailable(file: TFile | null): boolean;
   getRawCache(file: TFile | null): any;
+  // TOC data operations with transformation
+  getCurrentFileTocData(): TocData | null;
+  getFileTocData(file: TFile | null): TocFile | null;
 }
 
 interface IObsidianNavigator {
@@ -38,7 +41,7 @@ interface IObsidianNavigator {
 - Navigation operations (scroll, cursor positioning) via `app.workspace` and editor APIs
 - Error handling for invalid files/cache states
 
-**Implementation**: `ObsidianDataSource` class that implements both `IObsidianDataSource` and `IObsidianNavigator` interfaces.
+**Implementation**: `ObsidianDataSource` class that implements both `IObsidianDataSource` and `IObsidianNavigator` interfaces. Focuses solely on raw data extraction without UI concerns.
 
 ### ObsidianEvents (`ui/datasources/obsidianEvents.ts`)
 
@@ -86,73 +89,97 @@ interface IObsidianNavigator {
 
 **Implementation**: Integrated into `ObsidianDataSource` class to maintain single responsibility for all Obsidian API interactions.
 
-## Data Repository
-### TocRepository (`ui/repositories/tocRepository.ts`)
+## Data Transformation
+### TocTransformers (`ui/utils/tocTransformers.ts`)
 
-**Purpose**: Domain-facing repository for TOC data operations with caching and error handling.
+**Purpose**: Pure transformation functions for converting between Obsidian and TOC data formats.
 
-**Interface**: `ITocRepository`
+**Functions**:
 ```typescript
-interface ITocRepository {
-  getCurrentFileHeadings(): Promise<Result<TocData, TocDataServiceError>>;
-  getFileHeadings(filePath: string): Promise<Result<TocFile, TocDataServiceError>>;
-  clearCache(): void;
-}
+function obsidianToTocHeading(obsidianHeading: ObsidianHeading): TocHeading | null;
+function obsidianToTocFile(obsidianFile: ObsidianFile, obsidianHeadings: ObsidianHeading[]): TocFile | null;
+function validateTocHeading(heading: TocHeading): boolean;
+function validateTocFile(file: TocFile): boolean;
 ```
 
 **Responsibilities**:
-- Data transformation using mappers
-- Input validation and error handling
-- In-memory caching for performance
-- Domain model construction
-- Consistent error reporting via `Result<T, E>` pattern
+- Convert Obsidian heading data to TOC format
+- Sanitize heading text (remove markdown formatting)
+- Validate heading levels (1-3 only)
+- Generate unique IDs for headings
+- Validate transformed data integrity
+- Pure functions with no side effects
 
-**Implementation**: `TocRepository` class with:
-- Cache management (`Map<string, TocFile>`)
-- Dependency injection of `IObsidianDataSource`
-- Error handling with typed error codes
+**Implementation**: Utility functions used by UI services for data transformation.
 
 
 # Services Layer
 
-## Event Synchronization
-### TocSyncEffects (`ui/services/tocSyncEffects.ts`)
+## UI Business Logic Services
 
-**Purpose**: Coordinates Obsidian events with store updates and repository cache management using separate store adapters.
+### TocDataComposer (`ui/services/tocDataComposer.ts`)
 
-**Interface**: Split store adapters for focused responsibilities
+**Purpose**: Handles data transformation and composition for UI layer.
+
+**Interface**:
 ```typescript
-interface ITocStoreAdapter {
-  getState(): { activeFile: string | null; activeHeadingId: string | null; headings: TocHeading[]; };
-  setActiveFile(path: string | null): void;
-  setHeadings(headings: TocHeading[]): void;
-  setActiveHeading(id: string | null): void;
-}
-
-interface ITocModeStoreAdapter {
-  setScrolling(isScrolling: boolean): void;
-}
-
-class TocSyncEffects {
-  constructor(
-    events: IObsidianEvents,
-    repository: ITocRepository,
-    tocStore: ITocStoreAdapter,
-    modeStore: ITocModeStoreAdapter
-  );
-  init(): () => void; // Returns cleanup function
+interface ITocDataComposer {
+  composeTocData(tocFile: TocFile, activeHeadingId?: string): TocData;
+  transformFileToToc(file: TFile, obsidianFile: ObsidianFile, obsidianHeadings: ObsidianHeading[]): TocFile | null;
 }
 ```
 
 **Responsibilities**:
-- **File change side effects**: Reset active heading and refresh headings when files change
-- **Scroll side effects**: Update scrolling state in mode store, update active heading in TOC store when scrolling stops
-- **Edit side effects**: Update heading cache when user finishes editing (debounced)
-- **Event coordination**: Wire Obsidian events to appropriate store actions and repository operations
-- **Error handling**: Graceful degradation when event handling fails
-- **Cleanup management**: Proper disposal of event listeners and timers
+- Transform raw Obsidian data to TOC format
+- Compose UI-specific data structures from domain data
+- Handle data validation and error cases
+- Separate UI concerns from data extraction
 
-**Implementation**: `TocSyncEffects` class with dependency injection of events, repository, and separate store adapters for focused responsibilities.
+### Focused Event Services
+
+#### TocFileService (`ui/services/tocFileService.ts`)
+**Purpose**: File change management and data loading
+**Responsibilities**:
+- Handle file open/change events
+- Load and transform file data
+- Update TOC store with file data
+
+#### TocScrollService (`ui/services/tocScrollService.ts`)
+**Purpose**: Scroll and active heading management
+**Responsibilities**:
+- Handle scroll events
+- Update mode store (scrolling state)
+- Calculate and update active heading using line-based position tracking
+
+#### TocEditService (`ui/services/tocEditService.ts`)
+**Purpose**: Edit state management
+**Responsibilities**:
+- Handle editor change events
+- Background data refresh without UI disruption
+
+### TocServiceCoordinator (`ui/services/tocServiceCoordinator.ts`)
+
+**Purpose**: Orchestrates all TOC services for complete functionality.
+
+**Interface**:
+```typescript
+class TocServiceCoordinator {
+  constructor(
+    events: IObsidianEvents,
+    dataSource: IObsidianDataSource,
+    tocStore: ITocStoreAdapter,
+    modeStore: ITocModeStoreAdapter
+  );
+  init(): () => void; // Returns cleanup function
+  loadInitialData(): Promise<void>;
+}
+```
+
+**Responsibilities**:
+- Coordinate focused services
+- Initialize all event listeners
+- Load initial TOC data
+- Provide unified cleanup interface
 
 ## Active Heading Detection
 ### Line-Based Position Tracking
@@ -287,25 +314,28 @@ flowchart TD
     F --> G[TOC Display]
 
     H[File Changed Event] --> I[ObsidianEvents]
-    I --> J[TocSyncEffects]
-    J --> K[Repository.refresh]
+    I --> J[TocFileService]
+    J --> K[DataSource + DataComposer]
     K --> L[TOC Store: setHeadings + setActiveFile]
     L --> G
 
     M[Editor Scroll Start] --> I
-    I --> N[Mode Store: setScrolling true]
-    N --> G
+    I --> N[TocScrollService]
+    N --> O[Mode Store: setScrolling true]
+    O --> G
 
-    O[Editor Scroll Stop] --> I
-    I --> P[Mode Store: setScrolling false]
-    P --> Q[Compute Active Heading]
-    Q --> R[TOC Store: setActiveHeading]
-    R --> G
+    P[Editor Scroll Stop] --> I
+    I --> Q[TocScrollService]
+    Q --> R[Mode Store: setScrolling false]
+    R --> S[Compute Active Heading]
+    S --> T[TOC Store: setActiveHeading]
+    T --> G
 
-    S[Editor Change Idle] --> I
-    I --> T[Repository.refresh Background]
-    T --> U[TOC Store: setHeadings]
-    U --> G
+    U[Editor Change Idle] --> I
+    I --> V[TocEditService]
+    V --> W[DataSource + DataComposer]
+    W --> X[TOC Store: setHeadings]
+    X --> G
 
     G --> V[User Views TOC]
     V --> W{User Action}
@@ -338,9 +368,8 @@ The new architecture uses a layered event system that maintains separation of co
 // In React view initialization
 const events = new ObsidianEvents(this.app);
 const dataSource = new ObsidianDataSource(this.app);
-const repository = new TocRepository(dataSource);
 
-// Initialize providers with effects
+// Initialize providers with service coordinator
 <TocProvidersWithEffects app={this.app} navigator={dataSource}>
   <TocContainer visible={true} />
 </TocProvidersWithEffects>
@@ -348,18 +377,19 @@ const repository = new TocRepository(dataSource);
 
 ### Event Flow
 1. **Obsidian Events** → `ObsidianEvents` (data layer)
-2. **Event Abstraction** → `TocSyncEffects` (services layer) 
-3. **Business Logic** → Split store actions (Mode Store + TOC Store) and Repository operations
-4. **UI Updates** → React components via focused store hooks
+2. **Event Abstraction** → Focused Services (`TocFileService`, `TocScrollService`, `TocEditService`)
+3. **Data Composition** → `TocDataComposer` (UI business logic)
+4. **Business Logic** → Split store actions (Mode Store + TOC Store)
+5. **UI Updates** → React components via focused store hooks
 
 ### Side Effects Implementation
-- **File changes**: `metadataCache.on('changed')` + `vault.on('modify')` → TOC Store: refresh headings + reset active heading
-- **Editor scrolling**: Editor scroll events → Mode Store: setScrolling + TOC Store: update active heading
-- **User editing**: Editor change events (debounced) → TOC Store: update headings cache without UI disruption
+- **File changes**: `metadataCache.on('changed')` + `vault.on('modify')` → `TocFileService` → TOC Store: refresh headings + reset active heading
+- **Editor scrolling**: Editor scroll events → `TocScrollService` → Mode Store: setScrolling + TOC Store: update active heading
+- **User editing**: Editor change events (debounced) → `TocEditService` → TOC Store: refresh headings without UI disruption
 
 ## How React Components Access Data
 - **Focused Store Hooks**: `useToc()`, `useTocMode()`, `useActiveHeading()`, `useNavigate()`
-- **Repository Access**: Via store effects, not direct component access
+- **DataSource Access**: Via store effects, not direct component access
 - **Obsidian Context**: `useObsidianApp()` hook only for initialization, not in components
 - **Pure Components**: UI components receive data via props from focused hooks, no Obsidian API coupling
 - **Store Coordination**: `useNavigate()` coordinates between Mode Store and TOC Store for navigation operations
