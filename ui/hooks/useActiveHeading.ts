@@ -4,7 +4,7 @@
  */
 
 import { useMemo } from 'react';
-import { useTocState } from './useTocState';
+import { useToc } from './useToc';
 import type { TocHeading } from '../schemas/toc';
 
 /**
@@ -12,23 +12,23 @@ import type { TocHeading } from '../schemas/toc';
  * @returns Object containing active heading data and operations
  */
 export function useActiveHeading() {
-  const store = useTocState();
+  const toc = useToc();
   
   return useMemo(() => ({
     /** Currently active heading object, null if none */
-    activeHeading: store.getActiveHeading(),
+    activeHeading: toc.getActiveHeading(),
     /** ID of the currently active heading */
-    activeHeadingId: store.activeHeadingId,
+    activeHeadingId: toc.activeHeadingId,
     /** Set the active heading by ID */
-    setActiveHeading: store.setActiveHeading,
+    setActiveHeading: toc.setActiveHeading,
     /** Navigate to a specific heading */
-    navigateToHeading: store.navigate,
+    navigateToHeading: toc.navigate,
     /** Check if a heading is currently active */
-    isHeadingActive: (heading: TocHeading) => heading.id === store.activeHeadingId
+    isHeadingActive: (heading: TocHeading) => heading.id === toc.activeHeadingId
   }), [
-    store.activeHeadingId,
-    store.getActiveHeading,
-    store.setActiveHeading,
-    store.navigate
+    toc.activeHeadingId,
+    toc.getActiveHeading,
+    toc.setActiveHeading,
+    toc.navigate
   ]);
 }

@@ -24,9 +24,5 @@ export {
   createInitialTocUIState 
 } from './uiState';
 
-// Store Implementation (Phase 4.2)
-export { TocUIProvider, type TocUIProviderProps } from '../stores/tocUIStore';
-
-// Data Source and Repository (Phase 1 Refactor)
 export { ObsidianDataSource, type IObsidianDataSource } from '../datasources/obsidianDataSource';
 export { TocRepository, type ITocRepository, type TocDataServiceError, type Result } from '../repositories/tocRepository';

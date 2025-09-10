@@ -6,16 +6,6 @@ The plugin mounts a lightweight React root as a floating overlay within the Obsi
 
 Both modes access the same headings list from metadataCache - they differ only in display style and interaction level. The active heading is tracked using line-based position detection. 
 
-Layer Architecture:
-- Data Layer: Convert Obsidian data to data interface
-- Repository Layer:
-1.  Our target is to exposed const apis for business logic: getDisplayData(), getCurrentHeadings(),Navigate().
-especially the data interface is affect how the heading-match strategy works.
-2. Our target is to expose a domain-specific model. This model will contain only data relevant to our business cases — in other words it should be completely decoupled from the specific API provide and raw data format
-- UI Layer: 
-
-
-
 
 # Data Layer
 
@@ -128,32 +118,41 @@ interface ITocRepository {
 ## Event Synchronization
 ### TocSyncEffects (`ui/services/tocSyncEffects.ts`)
 
-**Purpose**: Coordinates Obsidian events with store updates and repository cache management.
+**Purpose**: Coordinates Obsidian events with store updates and repository cache management using separate store adapters.
 
-**Interface**: `ITocUIStore` integration with `IObsidianEvents` and `ITocRepository`
+**Interface**: Split store adapters for focused responsibilities
 ```typescript
-interface ITocUIStore {
-  getState(): { mode: TocMode; activeFile: string | null; activeHeadingId: string | null; headings: TocHeading[]; };
-  setMode(mode: TocMode): void;
+interface ITocStoreAdapter {
+  getState(): { activeFile: string | null; activeHeadingId: string | null; headings: TocHeading[]; };
   setActiveFile(path: string | null): void;
   setHeadings(headings: TocHeading[]): void;
   setActiveHeading(id: string | null): void;
 }
 
+interface ITocModeStoreAdapter {
+  setScrolling(isScrolling: boolean): void;
+}
+
 class TocSyncEffects {
+  constructor(
+    events: IObsidianEvents,
+    repository: ITocRepository,
+    tocStore: ITocStoreAdapter,
+    modeStore: ITocModeStoreAdapter
+  );
   init(): () => void; // Returns cleanup function
 }
 ```
 
 **Responsibilities**:
-- **File change side effects**: Reset mode to "compact" and refresh headings when files change
-- **Scroll side effects**: Switch to "compact" mode during scrolling, update active heading when scrolling stops
+- **File change side effects**: Reset active heading and refresh headings when files change
+- **Scroll side effects**: Update scrolling state in mode store, update active heading in TOC store when scrolling stops
 - **Edit side effects**: Update heading cache when user finishes editing (debounced)
-- **Event coordination**: Wire Obsidian events to store actions and repository operations
+- **Event coordination**: Wire Obsidian events to appropriate store actions and repository operations
 - **Error handling**: Graceful degradation when event handling fails
 - **Cleanup management**: Proper disposal of event listeners and timers
 
-**Implementation**: `TocSyncEffects` class with dependency injection of events, repository, and store.
+**Implementation**: `TocSyncEffects` class with dependency injection of events, repository, and separate store adapters for focused responsibilities.
 
 ## Active Heading Detection
 ### Line-Based Position Tracking
@@ -185,10 +184,93 @@ function getCurrentHeading(scrollLine: number, headings: TocHeading[]): TocHeadi
 
 # UI Layer
 
-- FloatTocContainer: fixed overlay at middle-left; 
-- PreviewTree: compact tree in the shape of a line with different lengths for different levels
-- TocTree: table of contents showing 5–8 items at once; scrollable; active item highlighted; heading text truncated with ellipsis. width constrained with content-first strategy, height constrained with cognitive load theory.
-- TocItem: heading text item with level-based indentation .
+## Store Architecture
+
+The UI layer uses a split-store architecture with clear separation of concerns:
+
+### Mode Store (`ITocModeStore`)
+**Purpose**: Manages UI interaction state and display mode computation
+**Location**: `ui/stores/tocModeStore.tsx`
+
+**Interface**:
+```typescript
+interface ITocModeStore {
+  // State
+  isHovering: boolean;
+  isScrolling: boolean;
+  isNavigating: boolean;
+  
+  // Actions
+  setHovering(isHovering: boolean): void;
+  setScrolling(isScrolling: boolean): void;
+  setNavigating(isNavigating: boolean): void;
+  
+  // Selectors
+  getDisplayMode(): TocUIMode;
+  isPreviewMode(): boolean;
+  isDetailMode(): boolean;
+}
+```
+
+**Responsibilities**:
+- Track user interaction states (hover, scroll, navigation)
+- Compute display mode based on interaction state
+- Provide mode-related selectors for components
+
+### TOC Store (`ITocStore`)
+**Purpose**: Manages TOC data and navigation operations
+**Location**: `ui/stores/tocStore.tsx`
+
+**Interface**:
+```typescript
+interface ITocStore {
+  // State
+  activeFile: string | null;
+  activeHeadingId: string | null;
+  headings: TocHeading[];
+  
+  // Actions
+  setActiveFile(filePath: string | null): void;
+  setActiveHeading(headingId: string | null): void;
+  setHeadings(headings: TocHeading[]): void;
+  navigate(headingId: string): void;
+  
+  // Selectors
+  getActiveHeading(): TocHeading | null;
+  getHeadingsByLevel(level: number): TocHeading[];
+}
+```
+
+**Responsibilities**:
+- Manage document structure data (headings, active file)
+- Handle navigation operations
+- Provide data-related selectors for components
+
+### Provider Integration
+**Location**: `ui/stores/tocProvidersWithEffects.tsx`
+
+**Architecture**:
+- **Top-level**: Mode provider (global UI state)
+- **Container-level**: TOC provider (document-specific data)
+- **Effects integration**: Sync effects coordinate between both stores
+
+## Component Architecture
+
+### Container Components
+- **TocContainer**: Fixed overlay at middle-left; switches between preview and detail views based on mode
+- **TocPreviewView**: Preview tree in the shape of lines with different lengths for different levels
+- **TocDetailView**: Table of contents showing 5–8 items at once; scrollable; active item highlighted; heading text truncated with ellipsis
+
+### Hook Design
+- **`useTocMode()`**: Access to interaction state and display mode
+- **`useToc()`**: Access to TOC data and navigation
+- **`useNavigate()`**: Coordinates between both stores for navigation
+- **`useActiveHeading()`**: Focused access to active heading data
+
+### Component Responsibilities
+- **Pure Presentational**: Components receive data via props, no direct store access
+- **Focused Hooks**: Each hook provides access to a specific store concern
+- **Coordinated Actions**: Navigation operations coordinate between stores as needed
 
 ## Design Token
 All styling relies on Obsidian CSS variables to match themes and avoid hard-coded colors.
@@ -197,35 +279,40 @@ All styling relies on Obsidian CSS variables to match themes and avoid hard-code
 
 ```mermaid
 flowchart TD
-    A[Plugin Enabled] --> B[Initialize TocSyncEffects]
-    B --> C[Setup Event Listeners]
-    C --> D[Read Initial TOC Data]
-    D --> E[TOC Display]
+    A[Plugin Enabled] --> B[Initialize TocProvidersWithEffects]
+    B --> C[Setup Mode Store + TOC Store]
+    C --> D[Initialize TocSyncEffects with Store Adapters]
+    D --> E[Setup Event Listeners]
+    E --> F[Read Initial TOC Data]
+    F --> G[TOC Display]
 
-    F[File Changed Event] --> G[ObsidianEvents]
-    G --> H[TocSyncEffects]
-    H --> I[Repository.refresh]
-    I --> J[Store.setHeadings + setMode compact]
-    J --> E
+    H[File Changed Event] --> I[ObsidianEvents]
+    I --> J[TocSyncEffects]
+    J --> K[Repository.refresh]
+    K --> L[TOC Store: setHeadings + setActiveFile]
+    L --> G
 
-    K[Editor Scroll Start] --> G
-    G --> L[Store.setMode compact]
-    L --> E
+    M[Editor Scroll Start] --> I
+    I --> N[Mode Store: setScrolling true]
+    N --> G
 
-    M[Editor Scroll Stop] --> G
-    G --> N[Compute Active Heading]
-    N --> O[Store.setActiveHeading]
-    O --> E
+    O[Editor Scroll Stop] --> I
+    I --> P[Mode Store: setScrolling false]
+    P --> Q[Compute Active Heading]
+    Q --> R[TOC Store: setActiveHeading]
+    R --> G
 
-    P[Editor Change Idle] --> G
-    G --> Q[Repository.refresh Background]
-    Q --> R[Store.setHeadings]
-    R --> E
+    S[Editor Change Idle] --> I
+    I --> T[Repository.refresh Background]
+    T --> U[TOC Store: setHeadings]
+    U --> G
 
-    E --> S[User Views TOC]
-    S --> T{User Action}
-    T -->|Navigate| U[Jump to Section]
-    T -->|Hover| V[Switch Display Mode]
+    G --> V[User Views TOC]
+    V --> W{User Action}
+    W -->|Navigate| X[useNavigate: Coordinate Mode + TOC Stores]
+    W -->|Hover| Y[Mode Store: setHovering]
+    X --> G
+    Y --> G
 ```
 
 ## CRUD Operations Summary
@@ -252,31 +339,29 @@ The new architecture uses a layered event system that maintains separation of co
 const events = new ObsidianEvents(this.app);
 const dataSource = new ObsidianDataSource(this.app);
 const repository = new TocRepository(dataSource);
-const store = createTocStore();
-const syncEffects = new TocSyncEffects(events, repository, store);
 
-// Initialize event synchronization
-const disposeSyncEffects = syncEffects.init();
-
-// Cleanup on view unload
-this.registerEvent(() => disposeSyncEffects());
+// Initialize providers with effects
+<TocProvidersWithEffects app={this.app} navigator={dataSource}>
+  <TocContainer visible={true} />
+</TocProvidersWithEffects>
 ```
 
 ### Event Flow
 1. **Obsidian Events** → `ObsidianEvents` (data layer)
 2. **Event Abstraction** → `TocSyncEffects` (services layer) 
-3. **Business Logic** → Store actions and Repository operations
-4. **UI Updates** → React components via store hooks
+3. **Business Logic** → Split store actions (Mode Store + TOC Store) and Repository operations
+4. **UI Updates** → React components via focused store hooks
 
 ### Side Effects Implementation
-- **File changes**: `metadataCache.on('changed')` + `vault.on('modify')` → reset mode + refresh headings
-- **Editor scrolling**: Editor scroll events → switch to compact mode + track active heading
-- **User editing**: Editor change events (debounced) → update cache without UI disruption
+- **File changes**: `metadataCache.on('changed')` + `vault.on('modify')` → TOC Store: refresh headings + reset active heading
+- **Editor scrolling**: Editor scroll events → Mode Store: setScrolling + TOC Store: update active heading
+- **User editing**: Editor change events (debounced) → TOC Store: update headings cache without UI disruption
 
 ## How React Components Access Data
-- **Store Hooks**: `useTocState()`, `useActiveHeading()`, `useTocMode()`, `useNavigate()`
+- **Focused Store Hooks**: `useToc()`, `useTocMode()`, `useActiveHeading()`, `useNavigate()`
 - **Repository Access**: Via store effects, not direct component access
 - **Obsidian Context**: `useObsidianApp()` hook only for initialization, not in components
-- **Pure Components**: UI components receive props from store hooks, no Obsidian API coupling
+- **Pure Components**: UI components receive data via props from focused hooks, no Obsidian API coupling
+- **Store Coordination**: `useNavigate()` coordinates between Mode Store and TOC Store for navigation operations
 
 

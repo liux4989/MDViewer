@@ -27,26 +27,34 @@ export interface TocDetailViewProps {
  */
 export function TocDetailView({ headings, activeHeadingId, className }: TocDetailViewProps) {
   const { navigateToHeading } = useNavigate();
-  const { setCompactMode } = useTocMode();
+  const mode = useTocMode();
 
   const handlePointerOut = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    // Only switch to compact when pointer actually leaves the container
+    // Only clear hovering when pointer actually leaves the container
     const related = e.relatedTarget as Node | null;
     if (!related || !(e.currentTarget as Node).contains(related)) {
-      setCompactMode();
+      mode.setHovering(false);
     }
-  }, [setCompactMode]);
+  }, [mode]);
 
   if (headings.length === 0) {
     return (
-      <div className={`toc-detail-view toc-detail-empty ${className || ''}`} onPointerOut={handlePointerOut}>
+      <div
+        className={`toc-detail-view toc-detail-empty ${className || ''}`}
+        onPointerEnter={() => mode.setHovering(true)}
+        onPointerOut={handlePointerOut}
+      >
         <div className="toc-detail-empty-message">No headings</div>
       </div>
     );
   }
 
   return (
-    <div className={`toc-detail-view ${className || ''}`} onPointerOut={handlePointerOut}>
+    <div
+      className={`toc-detail-view ${className || ''}`}
+      onPointerEnter={() => mode.setHovering(true)}
+      onPointerOut={handlePointerOut}
+    >
       <div className="toc-detail-listF">
         {headings.map((heading) => {
           const isActive = heading.id === activeHeadingId;

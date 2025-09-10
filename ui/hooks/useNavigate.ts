@@ -1,10 +1,12 @@
 /**
  * Navigation Hook
  * Provides navigation operations for TOC headings
+ * Coordinates between TOC store and Mode store for navigation state
  */
 
 import { useMemo, useCallback } from 'react';
-import { useTocState } from './useTocState';
+import { useToc } from './useToc';
+import { useTocMode } from './useTocMode';
 import type { TocHeading } from '../schemas/toc';
 
 /**
@@ -17,19 +19,29 @@ export type NavigationDirection = 'next' | 'prev' | 'parent' | 'child';
  * @returns Object containing navigation functions and related data
  */
 export function useNavigate() {
-  const store = useTocState();
+  const toc = useToc();
+  const mode = useTocMode();
   
   // Memoized navigation functions
   const navigateToHeading = useCallback((headingId: string) => {
-    store.navigate(headingId);
-  }, [store.navigate]);
+    // Set navigation state in mode store
+    mode.setNavigating(true);
+
+    // Navigate in TOC store
+    toc.navigate(headingId);
+
+    // Clear navigation state after a delay to allow DOM to settle
+    setTimeout(() => {
+      mode.setNavigating(false);
+    }, 300);
+  }, [toc, mode]);
   
   const navigateToHeadingByIndex = useCallback((index: number) => {
-    const heading = store.headings[index];
+    const heading = toc.headings[index];
     if (heading) {
-      store.navigate(heading.id);
+      navigateToHeading(heading.id);
     }
-  }, [store.headings, store.navigate]);
+  }, [toc.headings, navigateToHeading]);
   
   return useMemo(() => ({
     /** Navigate to a specific heading by ID */

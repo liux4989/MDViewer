@@ -1,13 +1,13 @@
 /**
  * TOC Container Component
  * Pure presentation component that renders the appropriate TOC view
- * Data loading and effects are now handled by TocUIProvider
+ * Uses split stores for mode and TOC data
  */
 
 import React from 'react';
-import { useTocState } from '../hooks/useTocState';
+import { useToc } from '../hooks/useToc';
 import { useTocMode } from '../hooks/useTocMode';
-import TocCompactView from './TocCompactView';
+import TocPreviewView from './TocPreviewView';
 import TocDetailView from './TocDetailView';
 
 /**
@@ -21,11 +21,12 @@ export interface TocContainerProps {
 /**
  * TOC Container Component
  * Pure presentation component that renders the appropriate TOC view
- * All data loading and effects are handled by TocUIProvider
+ * Uses split stores for mode and TOC data
  */
 export function TocContainer({ visible = true }: TocContainerProps) {
-  const store = useTocState();
-  const { isCompactMode } = useTocMode();
+  const toc = useToc();
+  const mode = useTocMode();
+  const isPreviewMode = mode.isPreviewMode();
 
   if (!visible) {
     return null;
@@ -34,15 +35,15 @@ export function TocContainer({ visible = true }: TocContainerProps) {
   // Render floating TOC directly (plugin handles positioning)
   return (
     <div className="toc-floating-container">
-      {isCompactMode ? (
-        <TocCompactView
-          headings={store.headings}
-          activeHeadingId={store.activeHeadingId}
+      {isPreviewMode ? (
+        <TocPreviewView
+          headings={toc.headings}
+          activeHeadingId={toc.activeHeadingId}
         />
       ) : (
           <TocDetailView
-            headings={store.headings}
-            activeHeadingId={store.activeHeadingId}
+            headings={toc.headings}
+            activeHeadingId={toc.activeHeadingId}
           />
       )}
     </div>

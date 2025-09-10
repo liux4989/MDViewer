@@ -1,5 +1,5 @@
 /**
- * Compact Mode TOC View Component
+ * Preview Mode TOC View Component
  * Displays document structure as lines of different lengths - like a minimap preview
  * Designed for quick visual overview of document structure
  */
@@ -9,9 +9,9 @@ import type { TocHeading } from '../schemas/toc';
 import { useTocMode } from '../hooks/useTocMode';
 
 /**
- * Props for TocCompactView component
+ * Props for TocPreviewView component
  */
-export interface TocCompactViewProps {
+export interface TocPreviewViewProps {
   /** Array of headings to display */
   headings: TocHeading[];
   /** ID of the currently active heading */
@@ -39,15 +39,20 @@ function calculateLineWidth(heading: TocHeading): number {
 }
 
 /**
- * Compact TOC View Component
+ * Preview TOC View Component
  * Pure display component showing document structure as line previews
  */
-export function TocCompactView({ headings, activeHeadingId, className }: TocCompactViewProps) {
-  const { setDetailMode } = useTocMode();
+export function TocPreviewView({ headings, activeHeadingId, className }: TocPreviewViewProps) {
+  const mode = useTocMode();
+
   if (headings.length === 0) {
     return (
-      <div className={`toc-compact-view toc-compact-empty ${className || ''}`} onPointerEnter={setDetailMode}>
-        <div className="toc-compact-empty-message">
+      <div
+        className={`toc-preview-view toc-preview-empty ${className || ''}`}
+        onPointerEnter={() => mode.setHovering(true)}
+        onPointerLeave={() => mode.setHovering(false)}
+      >
+        <div className="toc-preview-empty-message">
           No structure
         </div>
       </div>
@@ -55,8 +60,12 @@ export function TocCompactView({ headings, activeHeadingId, className }: TocComp
   }
 
   return (
-    <div className={`toc-compact-view ${className || ''}`} onPointerEnter={setDetailMode}>
-      <div className="toc-compact-lines">
+    <div
+      className={`toc-preview-view ${className || ''}`}
+      onPointerEnter={() => mode.setHovering(true)}
+      onPointerLeave={() => mode.setHovering(false)}
+    >
+      <div className="toc-preview-lines">
         {headings.map((heading) => {
           const lineWidth = calculateLineWidth(heading);
           const isActive = heading.id === activeHeadingId;
@@ -64,8 +73,8 @@ export function TocCompactView({ headings, activeHeadingId, className }: TocComp
           return (
             <div
               key={heading.id}
-              className={`toc-compact-line toc-level-${heading.level} ${
-                isActive ? 'toc-compact-active' : ''
+              className={`toc-preview-line toc-level-${heading.level} ${
+                isActive ? 'toc-preview-active' : ''
               }`}
               style={{ width: `${lineWidth}%` }}
               title={heading.text} // Tooltip shows actual heading text
@@ -79,4 +88,4 @@ export function TocCompactView({ headings, activeHeadingId, className }: TocComp
   );
 }
 
-export default TocCompactView;
+export default TocPreviewView;

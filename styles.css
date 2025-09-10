@@ -33,16 +33,16 @@
 	opacity: 0.8;
 }
 
-/* ===== TOC Compact Mode Styles (Line Preview) ===== */
+/* ===== TOC Preview Mode Styles (Line Preview) ===== */
 
-.toc-compact-view {
+.toc-preview-view {
 	width: 100%;
 	max-width: 120px;
 	/* Narrower for line preview */
 	min-width: 80px;
 }
 
-.toc-compact-lines {
+.toc-preview-lines {
 	display: flex;
 	flex-direction: column;
 	gap: 2px;
@@ -52,7 +52,7 @@
 	align-items: flex-start;
 }
 
-.toc-compact-line {
+.toc-preview-line {
 	height: 2px;
 	/* Thin lines representing headings */
 	background-color: var(--text-faint);
@@ -64,23 +64,23 @@
 }
 
 /* Level-specific line styling */
-.toc-compact-line.toc-level-1 {
+.toc-preview-line.toc-level-1 {
 	height: 3px;
 	/* Slightly thicker for H1 */
 	background-color: var(--text-muted);
 }
 
-.toc-compact-line.toc-level-2 {
+.toc-preview-line.toc-level-2 {
 	height: 2px;
 	background-color: var(--text-faint);
 	margin-left: 4px;
 	/* Slight indent */
 }
 
-.toc-compact-line.toc-level-3,
-.toc-compact-line.toc-level-4,
-.toc-compact-line.toc-level-5,
-.toc-compact-line.toc-level-6 {
+.toc-preview-line.toc-level-3,
+.toc-preview-line.toc-level-4,
+.toc-preview-line.toc-level-5,
+.toc-preview-line.toc-level-6 {
 	height: 1px;
 	/* Thinner for deeper levels */
 	background-color: var(--text-faint);
@@ -90,31 +90,31 @@
 }
 
 /* Active heading highlight */
-.toc-compact-line.toc-compact-active {
+.toc-preview-line.toc-preview-active {
 	background-color: var(--text-accent);
 	height: 3px;
 	/* Slightly thicker when active */
 	box-shadow: 0 0 3px var(--text-accent);
 }
 
-.toc-compact-line.toc-compact-active.toc-level-1 {
+.toc-preview-line.toc-preview-active.toc-level-1 {
 	height: 4px;
 }
 
-.toc-compact-line.toc-compact-active.toc-level-2 {
+.toc-preview-line.toc-preview-active.toc-level-2 {
 	height: 3px;
 }
 
-.toc-compact-line.toc-compact-active.toc-level-3,
-.toc-compact-line.toc-compact-active.toc-level-4,
-.toc-compact-line.toc-compact-active.toc-level-5,
-.toc-compact-line.toc-compact-active.toc-level-6 {
+.toc-preview-line.toc-preview-active.toc-level-3,
+.toc-preview-line.toc-preview-active.toc-level-4,
+.toc-preview-line.toc-preview-active.toc-level-5,
+.toc-preview-line.toc-preview-active.toc-level-6 {
 	height: 2px;
 	opacity: 1;
 }
 
 /* Empty state */
-.toc-compact-empty {
+.toc-preview-empty {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -125,7 +125,7 @@
 	min-height: 32px;
 }
 
-.toc-compact-empty-message {
+.toc-preview-empty-message {
 	text-align: center;
 }
 

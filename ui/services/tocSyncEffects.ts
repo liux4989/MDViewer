@@ -27,31 +27,34 @@ function getCurrentHeading(scrollLine: number, headings: TocHeading[]): TocHeadi
   });
 }
 
-export interface ITocUIStore {
+export interface ITocStoreAdapter {
   getState(): {
-    mode: TocMode;
     activeFile: string | null;
     activeHeadingId: string | null;
     headings: TocHeading[];
   };
-  setMode(mode: TocMode): void;
   setActiveFile(path: string | null): void;
   setHeadings(headings: TocHeading[]): void;
   setActiveHeading(id: string | null): void;
+}
+
+export interface ITocModeStoreAdapter {
+  setScrolling(isScrolling: boolean): void;
 }
 
 /**
  * Coordinates Obsidian events with store updates and repository cache management
  * Implements the three main side effects:
  * 1. File changes → reset mode and update headings
- * 2. Editor scrolling → switch to compact mode and track active heading
+ * 2. Editor scrolling → switch to preview mode and track active heading
  * 3. User editing → update heading cache without UI disruption
  */
 export class TocSyncEffects {
   constructor(
     private events: IObsidianEvents,
     private repository: ITocRepository,
-    private store: ITocUIStore
+    private tocStore: ITocStoreAdapter,
+    private modeStore: ITocModeStoreAdapter
   ) { }
 
   /**
@@ -64,17 +67,16 @@ export class TocSyncEffects {
     // Side Effect 1: File changes → reset mode and refresh headings
     const handleFileRefresh = async (path: string) => {
       try {
-        const { activeFile } = this.store.getState();
+        const { activeFile } = this.tocStore.getState();
         if (activeFile != path) {
           const result = await this.repository.getCurrentFileHeadings();
           if (result.ok) {
             const headings = result.data.headings;
 
-            // Update store with new data and reset to compact mode
-            this.store.setHeadings(headings);
-            this.store.setMode('compact');
-            this.store.setActiveFile(path);
-            this.store.setActiveHeading(null); // Reset active heading
+            // Update store with new data
+            this.tocStore.setHeadings(headings);
+            this.tocStore.setActiveFile(path);
+            this.tocStore.setActiveHeading(null); // Reset active heading
           } else {
             console.error('Failed to get current file headings:', result.error?.message || 'Unknown error');
             return;
@@ -90,16 +92,19 @@ export class TocSyncEffects {
       this.events.onFileChanged(handleFileRefresh)
     );
 
-    // Side Effect 2: Editor scrolling → switch to compact mode and track active heading
+    // Side Effect 2: Editor scrolling → track scrolling state and active heading
     disposers.push(
       this.events.onEditorScrollStart(() => {
-        // Switch to compact mode while scrolling for better performance
-        this.store.setMode('compact');
+        // Set scrolling state (mode will be computed as compact)
+        this.modeStore.setScrolling(true);
       }),
 
       this.events.onEditorScrollStop(async () => {
+        // Clear scrolling state
+        this.modeStore.setScrolling(false);
+
         try {
-          const { activeFile } = this.store.getState();
+          const { activeFile } = this.tocStore.getState();
           if (!activeFile) return;
 
           // Get current headings from cache (optimized method for active file)
@@ -114,8 +119,8 @@ export class TocSyncEffects {
               ? getCurrentHeading(currentScrollLine, headings)
               : (headings.length > 0 ? headings[0] : undefined);
 
-            // Update active heading without changing mode
-            this.store.setActiveHeading(activeHeading?.id ?? null);
+            // Update active heading
+            this.tocStore.setActiveHeading(activeHeading?.id ?? null);
           } else {
             console.error('Failed to get headings for active file:', result.error?.message || 'Unknown error');
             return;
@@ -130,7 +135,7 @@ export class TocSyncEffects {
     disposers.push(
       this.events.onEditorChangeIdle(async (path) => {
         try {
-          const { activeFile } = this.store.getState();
+          const { activeFile } = this.tocStore.getState();
 
           // Only update if this is the currently active file
           if (activeFile === path) {
@@ -142,7 +147,7 @@ export class TocSyncEffects {
 
               // Update headings but preserve current mode and active heading
               // This ensures editing doesn't disrupt user's current interaction
-              this.store.setHeadings(headings);
+              this.tocStore.setHeadings(headings);
             } else {
               console.error('Failed to refresh headings cache:', result.error?.message || 'Unknown error');
               return;

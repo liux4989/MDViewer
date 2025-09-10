@@ -1,10 +1,10 @@
 /**
- * TOC UI Hooks
- * Facade hooks that depend only on ITocUIStore contract
+ * TOC Hooks
+ * Facade hooks that provide access to TOC and Mode stores
  */
 
 // Core hooks
-export { useTocState, _setTocUIContext } from './useTocState';
-export { useActiveHeading } from './useActiveHeading';
+export { useToc } from './useToc';
 export { useTocMode } from './useTocMode';
+export { useActiveHeading } from './useActiveHeading';
 export { useNavigate, type NavigationDirection } from './useNavigate';

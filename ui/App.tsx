@@ -1,5 +1,5 @@
 import React from 'react';
-import { TocUIProvider } from './stores/tocUIStore';
+import { TocProvidersWithEffects } from './stores/tocProvidersWithEffects';
 import TocContainer from './components/TocContainer';
 import { useObsidianApp } from './ObsidianAppContext';
 import { ObsidianDataSource } from './datasources/obsidianDataSource';
@@ -15,9 +15,9 @@ const App: React.FC<AppProps> = ({ floatingMode = false }) => {
 	// If in floating mode, only render the TOC
 	if (floatingMode) {
 		return (
-			<TocUIProvider app={app} navigator={navigator}>
+			<TocProvidersWithEffects app={app} navigator={navigator}>
 				<TocContainer visible={true} />
-			</TocUIProvider>
+			</TocProvidersWithEffects>
 		);
 	}
 	else {

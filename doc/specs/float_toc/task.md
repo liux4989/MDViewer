@@ -237,20 +237,20 @@ Task History : Execute task2(e65ea9e2-c854-4ddb-a915-dd5140d52b8f)
 
 # Phase 5: UI Layer
 
-## Task 5.1: Compact Mode TOC UI [AI]
+## Task 5.1: Preview Mode TOC UI [AI]
 
 ### Subtasks:
-1. Design compact mode UI component structure
-   - Create `TocCompactView` component for minimal, read-only display
+1. Design preview mode UI component structure
+   - Create `TocPreviewView` component for minimal, read-only display
    - Focus on space-efficient layout with no interactive elements
    - Display only essential heading information (text and level indication)
-2. Implement compact mode styling
+2. Implement preview mode styling
    - Use Obsidian CSS variables for consistent theming
    - Minimize vertical space usage with compact typography
    - Add subtle level indentation or visual hierarchy
    - Ensure readability in both light and dark themes
-3. Create compact mode component
-   - Build `ui/components/TocCompactView.tsx` with pure display logic
+3. Create preview mode component
+   - Build `ui/components/TocPreviewView.tsx` with pure display logic
    - Accept headings array and activeHeadingId as props
    - Render headings in a space-efficient list format
    - Highlight active heading with subtle visual indicator
@@ -260,7 +260,7 @@ Task History : Execute task2(e65ea9e2-c854-4ddb-a915-dd5140d52b8f)
    - Add conditional rendering logic in main TOC component
 
 ### Success Criteria:
-- ✅ Compact view displays headings in minimal space
+- ✅ Preview view displays headings in minimal space
 - ✅ No interactive elements (clicks, hovers, keyboard navigation)
 - ✅ Active heading is visually highlighted
 - ✅ Styling integrates seamlessly with Obsidian theme
@@ -269,9 +269,9 @@ Task History : Execute task2(e65ea9e2-c854-4ddb-a915-dd5140d52b8f)
 - ✅ **COMPLETED**: Task 4.4 finished and integrated
 
 ### Deliverables:
-- ✅ `ui/components/TocCompactView.tsx` (compact display component)
+- ✅ `ui/components/TocPreviewView.tsx` (preview display component)
 - ✅ `ui/components/TocView.tsx` (main TOC component with mode switching)
 - ✅ `ui/components/TocFloating.tsx` (floating overlay with workspace attachment)
 - ✅ `ui/components/TocDemo.tsx` (demo component with sample data)
-- ✅ Compact mode styles using Obsidian CSS variables
+- ✅ Preview mode styles using Obsidian CSS variables
 - ✅ Integration with existing store and hooks architecture

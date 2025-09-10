@@ -4,7 +4,7 @@
 
 The TOC plugin needs to respond to three main Obsidian events:
 1. File changes → reset mode and update headings
-2. Editor scrolling → switch to compact mode and track active heading  
+2. Editor scrolling → switch to preview mode and track active heading  
 3. User editing → update heading cache when editing completes
 
 # Decision
