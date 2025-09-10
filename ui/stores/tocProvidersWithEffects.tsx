@@ -11,7 +11,6 @@ import { TocModeProvider } from './tocModeStore';
 import { TocSyncEffects, type ITocStoreAdapter, type ITocModeStoreAdapter } from '../services/tocSyncEffects';
 import { ObsidianDataSource } from '../datasources/obsidianDataSource';
 import { ObsidianEvents } from '../datasources/obsidianEvents';
-import { TocRepository } from '../repositories/tocRepository';
 import type { IObsidianNavigator } from '../datasources/navigator';
 import { useToc } from '../hooks/useToc';
 import { useTocMode } from '../hooks/useTocMode';
@@ -54,27 +53,28 @@ function TocEffectsIntegration({ app }: { app: App }) {
   }), [mode.setScrolling]);
 
   // Initialize data sources and effects once
-  const { dataSource, repository, events } = useMemo(() => {
+  const { dataSource, events } = useMemo(() => {
     const dataSource = new ObsidianDataSource(app);
-    const repository = new TocRepository(dataSource);
     const events = new ObsidianEvents(app);
-    return { dataSource, repository, events };
+    return { dataSource, events };
   }, [app]);
 
   // Initialize sync effects and load initial data
   useEffect(() => {
     // Initialize sync effects
-    syncEffectsRef.current = new TocSyncEffects(events, repository, tocStoreAdapter, modeStoreAdapter);
+    syncEffectsRef.current = new TocSyncEffects(events, dataSource, tocStoreAdapter, modeStoreAdapter);
     disposerRef.current = syncEffectsRef.current.init();
 
     // Load initial data for current file
     const loadInitialData = async () => {
       const activeFile = dataSource.getActiveFile();
       if (activeFile) {
-        const result = await repository.getCurrentFileHeadings();
-        if (result.ok) {
-          toc.setHeadings(result.data.headings);
+        const tocData = dataSource.getCurrentFileTocData();
+        if (tocData) {
+          toc.setHeadings(tocData.headings);
           toc.setActiveFile(activeFile.path);
+        } else {
+          console.error('Failed to load initial TOC data');
         }
       }
     };
@@ -89,7 +89,7 @@ function TocEffectsIntegration({ app }: { app: App }) {
       }
       syncEffectsRef.current = null;
     };
-  }, [dataSource, repository, events, tocStoreAdapter, modeStoreAdapter, toc]);
+  }, [dataSource, events, tocStoreAdapter, modeStoreAdapter, toc]);
 
   return null; // This component only handles effects, doesn't render anything
 }

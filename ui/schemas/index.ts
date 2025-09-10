@@ -25,4 +25,3 @@ export {
 } from './uiState';
 
 export { ObsidianDataSource, type IObsidianDataSource } from '../datasources/obsidianDataSource';
-export { TocRepository, type ITocRepository, type TocDataServiceError, type Result } from '../repositories/tocRepository';

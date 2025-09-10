@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { obsidianToTocHeading, obsidianToTocFile, validateTocHeading, validateTocFile } from '../../ui/repositories/tocMappers';
+import { obsidianToTocHeading, obsidianToTocFile, validateTocHeading, validateTocFile } from '../../ui/utils/tocTransformers';
 import type { ObsidianHeading, ObsidianFile } from '../../ui/schemas/toc';
 
 describe('Data Transformation Functions', () => {

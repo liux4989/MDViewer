@@ -4,7 +4,7 @@
  */
 
 import { IObsidianEvents } from '../datasources/obsidianEvents';
-import { ITocRepository, Result, TocDataServiceError } from '../repositories/tocRepository';
+import { IObsidianDataSource } from '../datasources/obsidianDataSource';
 import { TocHeading } from '../schemas/toc';
 
 export type TocMode = 'compact' | 'detail';
@@ -43,16 +43,16 @@ export interface ITocModeStoreAdapter {
 }
 
 /**
- * Coordinates Obsidian events with store updates and repository cache management
+ * Coordinates Obsidian events with store updates using data source directly
  * Implements the three main side effects:
  * 1. File changes → reset mode and update headings
  * 2. Editor scrolling → switch to preview mode and track active heading
- * 3. User editing → update heading cache without UI disruption
+ * 3. User editing → refresh headings without UI disruption
  */
 export class TocSyncEffects {
   constructor(
     private events: IObsidianEvents,
-    private repository: ITocRepository,
+    private dataSource: IObsidianDataSource,
     private tocStore: ITocStoreAdapter,
     private modeStore: ITocModeStoreAdapter
   ) { }
@@ -69,16 +69,16 @@ export class TocSyncEffects {
       try {
         const { activeFile } = this.tocStore.getState();
         if (activeFile != path) {
-          const result = await this.repository.getCurrentFileHeadings();
-          if (result.ok) {
-            const headings = result.data.headings;
+          const tocData = this.dataSource.getCurrentFileTocData();
+          if (tocData) {
+            const headings = tocData.headings;
 
             // Update store with new data
             this.tocStore.setHeadings(headings);
             this.tocStore.setActiveFile(path);
             this.tocStore.setActiveHeading(null); // Reset active heading
           } else {
-            console.error('Failed to get current file headings:', result.error?.message || 'Unknown error');
+            console.error('Failed to get current file TOC data');
             return;
           }
         }
@@ -107,10 +107,10 @@ export class TocSyncEffects {
           const { activeFile } = this.tocStore.getState();
           if (!activeFile) return;
 
-          // Get current headings from cache (optimized method for active file)
-          const result = await this.repository.getCurrentFileHeadings();
-          if (result.ok) {
-            const headings = result.data.headings;
+          // Get current headings from data source
+          const tocData = this.dataSource.getCurrentFileTocData();
+          if (tocData) {
+            const headings = tocData.headings;
 
             // Calculate which heading is active based on current scroll position
             // Uses Line-Based Position Tracking as decided in @match_heading.md
@@ -122,7 +122,7 @@ export class TocSyncEffects {
             // Update active heading
             this.tocStore.setActiveHeading(activeHeading?.id ?? null);
           } else {
-            console.error('Failed to get headings for active file:', result.error?.message || 'Unknown error');
+            console.error('Failed to get TOC data for active file');
             return;
           }
         } catch (error) {
@@ -131,7 +131,7 @@ export class TocSyncEffects {
       })
     );
 
-    // Side Effect 3: User editing → update cache without disrupting interaction
+    // Side Effect 3: User editing → refresh headings without disrupting interaction
     disposers.push(
       this.events.onEditorChangeIdle(async (path) => {
         try {
@@ -139,22 +139,21 @@ export class TocSyncEffects {
 
           // Only update if this is the currently active file
           if (activeFile === path) {
-            // Refresh cache in background by clearing and re-fetching
-            this.repository.clearCache();
-            const result = await this.repository.getCurrentFileHeadings();
-            if (result.ok) {
-              const headings = result.data.headings;
+            // Get fresh headings data (Obsidian cache will be automatically updated)
+            const tocData = this.dataSource.getCurrentFileTocData();
+            if (tocData) {
+              const headings = tocData.headings;
 
               // Update headings but preserve current mode and active heading
               // This ensures editing doesn't disrupt user's current interaction
               this.tocStore.setHeadings(headings);
             } else {
-              console.error('Failed to refresh headings cache:', result.error?.message || 'Unknown error');
+              console.error('Failed to refresh TOC data after edit');
               return;
             }
           }
         } catch (error) {
-          console.error('Failed to update TOC cache after edit:', path, error);
+          console.error('Failed to update TOC data after edit:', path, error);
         }
       })
     );

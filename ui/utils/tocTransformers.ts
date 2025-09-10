@@ -1,6 +1,6 @@
 /**
- * TOC Data Mappers - Phase 1 Refactor
- * Pure transformation functions to convert between Obsidian data formats and TOC domain models
+ * TOC Data Transformers - Utilities for converting between Obsidian and TOC formats
+ * Pure transformation functions extracted from repository layer
  */
 
 import type { ObsidianHeading, ObsidianFile, TocHeading, TocFile } from '../schemas/toc';
@@ -154,3 +154,4 @@ export function validateTocFile(file: TocFile): boolean {
   // Validate all headings
   return file.headings.every(validateTocHeading);
 }
+
