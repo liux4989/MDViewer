@@ -3,7 +3,7 @@
  */
 
 // TOC Data Structures
-export type { TocHeading, TocFile, TocData } from './toc';
+export type { TocHeading, TocFile } from './toc';
 
 // Obsidian Integration Interfaces
 export type { ObsidianFile, ObsidianHeading } from './toc';
@@ -17,7 +17,6 @@ export type {
   ITocModeStore
 } from './mode';
 export { 
-  TocUIModeSchema,
   TocInteractionStateSchema,
   computeDisplayMode,
   validateTocInteractionState,

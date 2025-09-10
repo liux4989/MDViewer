@@ -4,11 +4,10 @@
  */
 
 import type { TFile } from 'obsidian';
-import type { ObsidianFile, ObsidianHeading, TocData, TocFile } from '../schemas/toc';
+import type { ObsidianFile, ObsidianHeading, TocFile } from '../schemas/toc';
 import { obsidianToTocFile, validateTocFile } from '../utils/tocTransformers';
 
 export interface ITocDataComposer {
-  composeTocData(tocFile: TocFile, activeHeadingId?: string): TocData;
   transformFileToToc(file: TFile, obsidianFile: ObsidianFile, obsidianHeadings: ObsidianHeading[]): TocFile | null;
 }
 
@@ -16,19 +15,6 @@ export interface ITocDataComposer {
  * Composes UI-specific data structures from domain data
  */
 export class TocDataComposer implements ITocDataComposer {
-  /**
-   * Compose TocData from TocFile and UI state
-   * @param tocFile - Domain file data
-   * @param activeHeadingId - Current active heading ID (UI state)
-   * @returns Composed UI data structure
-   */
-  composeTocData(tocFile: TocFile, activeHeadingId?: string): TocData {
-    return {
-      file: tocFile,
-      headings: tocFile.headings,
-      activeHeading: activeHeadingId
-    };
-  }
 
   /**
    * Transform raw Obsidian data to TOC format

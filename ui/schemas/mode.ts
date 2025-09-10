@@ -79,10 +79,6 @@ export interface ITocModeStore extends TocInteractionState, TocModeActions, TocM
 
 // Zod Schemas for validation
 
-/**
- * Schema for TOC UI Mode
- */
-export const TocUIModeSchema = z.enum(['preview', 'detail']);
 
 /**
  * Schema for interaction state

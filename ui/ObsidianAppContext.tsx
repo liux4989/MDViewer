@@ -27,13 +27,5 @@ export const useObsidianApp = (): App => {
 	return app;
 };
 
-// Generic hook for plugin data/settings
-// This allows components to access plugin-specific data that was passed to the provider
-export const usePluginData = <T,>(): T | null => {
-	// This is a placeholder - in a real implementation, you'd want to pass plugin data
-	// through the context or have a more sophisticated system
-	// For now, components can use useObsidianApp() and access what they need
-	return null;
-};
 
 export default ObsidianAppContext;

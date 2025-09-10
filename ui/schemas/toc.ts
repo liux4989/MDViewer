@@ -29,17 +29,6 @@ export interface TocFile {
   headings: TocHeading[];
 }
 
-/**
- * Complete TOC data for the current view state
- */
-export interface TocData {
-  /** The file being displayed */
-  file: TocFile;
-  /** All headings from the file (for easy access) */
-  headings: TocHeading[];
-  /** Currently active/visible heading ID */
-  activeHeading?: string;
-}
 
 // Obsidian Integration Interfaces
 
