@@ -4,16 +4,16 @@ import { createRoot, Root } from 'react-dom/client';
 import AppComponent from './ui/App';
 import { ObsidianAppProvider } from './ui/ObsidianAppContext';
 
-interface MyPluginSettings {
+interface FloatingTocPluginSettings {
 	mySetting: string;
 }
 
-const DEFAULT_SETTINGS: MyPluginSettings = {
+const DEFAULT_SETTINGS: FloatingTocPluginSettings = {
 	mySetting: 'default'
 }
 
-export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings = DEFAULT_SETTINGS;
+export default class FloatingTocPlugin extends Plugin {
+	settings: FloatingTocPluginSettings = DEFAULT_SETTINGS;
 	root: Root | null = null;
 	tocContainer: HTMLElement | null = null;
 	isFloatingTocEnabled: boolean = false;
@@ -21,7 +21,7 @@ export default class MyPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 
-		this.addSettingTab(new MyPluginSettingTab(this.app, this));
+		this.addSettingTab(new FloatingTocPluginSettingTab(this.app, this));
 
 		// Add command to toggle floating TOC
 		this.addCommand({
@@ -85,13 +85,18 @@ export default class MyPlugin extends Plugin {
 		
 		this.tocContainer.style.display = 'block';
 		
-		// Render the floating TOC component
-		this.root.render(
-			React.createElement(ObsidianAppProvider, {
-				app: this.app,
-				children: React.createElement(AppComponent, { floatingMode: true })
-			})
-		);
+		try {
+			// Render the floating TOC component with error boundary
+			this.root.render(
+				React.createElement(ObsidianAppProvider, {
+					app: this.app,
+					children: React.createElement(AppComponent, { floatingMode: true })
+				})
+			);
+		} catch (error) {
+			console.error('Error rendering Floating TOC:', error);
+			this.hideFloatingToc();
+		}
 	}
 
 	hideFloatingToc() {
@@ -117,10 +122,10 @@ export default class MyPlugin extends Plugin {
 
 
 
-class MyPluginSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
+class FloatingTocPluginSettingTab extends PluginSettingTab {
+	plugin: FloatingTocPlugin;
 
-	constructor(app: App, plugin: MyPlugin) {
+	constructor(app: App, plugin: FloatingTocPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
@@ -128,7 +133,7 @@ class MyPluginSettingTab extends PluginSettingTab {
 	display(): void {
 		const { containerEl } = this;
 		containerEl.empty();
-		containerEl.createEl('h2', { text: 'My React Plugin Settings' });
+		containerEl.createEl('h2', { text: 'Floating TOC Plugin Settings' });
 
 		new Setting(containerEl)
 			.setName('My Setting')

@@ -3,6 +3,7 @@ import { TocProvidersWithEffects } from './stores/tocProvidersWithEffects';
 import TocContainer from './components/TocContainer';
 import { useObsidianApp } from './ObsidianAppContext';
 import { ObsidianDataSource } from './datasources/obsidianDataSource';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 interface AppProps {
 	floatingMode?: boolean;
@@ -15,14 +16,22 @@ const App: React.FC<AppProps> = ({ floatingMode = false }) => {
 	// If in floating mode, only render the TOC
 	if (floatingMode) {
 		return (
-			<TocProvidersWithEffects app={app} navigator={navigator}>
-				<TocContainer visible={true} />
-			</TocProvidersWithEffects>
+			<ErrorBoundary
+				onError={(error, errorInfo) => {
+					console.error('Floating TOC Error:', error, errorInfo);
+				}}
+			>
+				<TocProvidersWithEffects app={app} navigator={navigator}>
+					<TocContainer visible={true} />
+				</TocProvidersWithEffects>
+			</ErrorBoundary>
 		);
 	}
 	else {
 		return (
-			<h1> debug mode {floatingMode.toString()} </h1>
+			<ErrorBoundary>
+				<h1> debug mode {floatingMode.toString()} </h1>
+			</ErrorBoundary>
 		);
 	}
 
