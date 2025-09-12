@@ -5,8 +5,8 @@
 
 import type { IObsidianEvents } from '../datasources/obsidianEvents';
 import type { IObsidianDataSource } from '../datasources/obsidianDataSource';
-import { TocDataComposer } from './tocDataComposer';
-import { TocFileService, type ITocStoreAdapter } from './tocFileService';
+import type { ITocStoreAdapter } from './tocStoreAdapter';
+import { TocFileService } from './tocFileService';
 import { TocScrollService, type ITocModeStoreAdapter } from './tocScrollService';
 import { TocEditService } from './tocEditService';
 
@@ -17,7 +17,6 @@ export class TocServiceCoordinator {
   private fileService: TocFileService;
   private scrollService: TocScrollService;
   private editService: TocEditService;
-  private dataComposer: TocDataComposer;
 
   constructor(
     private events: IObsidianEvents,
@@ -25,21 +24,15 @@ export class TocServiceCoordinator {
     private tocStore: ITocStoreAdapter,
     private modeStore: ITocModeStoreAdapter
   ) {
-    // Initialize data composer
-    this.dataComposer = new TocDataComposer();
-
-    // Initialize focused services
+    // Initialize focused services with store adapter
     this.fileService = new TocFileService(
       this.events,
       this.dataSource,
-      this.dataComposer,
       this.tocStore
     );
 
     this.scrollService = new TocScrollService(
       this.events,
-      this.dataSource,
-      this.dataComposer,
       this.tocStore,
       this.modeStore
     );
@@ -47,7 +40,6 @@ export class TocServiceCoordinator {
     this.editService = new TocEditService(
       this.events,
       this.dataSource,
-      this.dataComposer,
       this.tocStore
     );
   }

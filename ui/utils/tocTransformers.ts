@@ -3,6 +3,7 @@
  * Pure transformation functions extracted from repository layer
  */
 
+import type { TFile } from 'obsidian';
 import type { ObsidianHeading, ObsidianFile, TocHeading, TocFile } from '../schemas/toc';
 
 /**
@@ -154,4 +155,7 @@ export function validateTocFile(file: TocFile): boolean {
   // Validate all headings
   return file.headings.every(validateTocHeading);
 }
+
+// Note: transformFileToToc moved to TocDataProcessor as it contains business logic
+// Utilities should only contain pure transformation functions with no business decisions
 

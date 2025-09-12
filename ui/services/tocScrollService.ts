@@ -4,18 +4,8 @@
  */
 
 import type { IObsidianEvents } from '../datasources/obsidianEvents';
-import type { IObsidianDataSource } from '../datasources/obsidianDataSource';
-import type { ITocDataComposer } from './tocDataComposer';
 import type { TocHeading } from '../schemas/toc';
-
-export interface ITocStoreAdapter {
-  getState(): {
-    activeFile: string | null;
-    activeHeadingId: string | null;
-    headings: TocHeading[];
-  };
-  setActiveHeading(id: string | null): void;
-}
+import type { ITocStoreAdapter } from './tocStoreAdapter';
 
 export interface ITocModeStoreAdapter {
   setScrolling(isScrolling: boolean): void;
@@ -45,8 +35,6 @@ function getCurrentHeading(scrollLine: number, headings: TocHeading[]): TocHeadi
 export class TocScrollService {
   constructor(
     private events: IObsidianEvents,
-    private dataSource: IObsidianDataSource,
-    private dataComposer: ITocDataComposer,
     private tocStore: ITocStoreAdapter,
     private modeStore: ITocModeStoreAdapter
   ) {}
@@ -98,7 +86,7 @@ export class TocScrollService {
       // Uses Line-Based Position Tracking as decided in @match_heading.md
       const activeHeading = getCurrentHeading(currentScrollLine, headings);
 
-      // Update active heading
+      // Update active heading through store
       this.tocStore.setActiveHeading(activeHeading?.id ?? null);
     } catch (error) {
       console.error('Failed to update active heading after scroll:', error);

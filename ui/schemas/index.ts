@@ -22,5 +22,3 @@ export {
   validateTocInteractionState,
   createInitialInteractionState
 } from './mode';
-
-export { ObsidianDataSource, type IObsidianDataSource } from '../datasources/obsidianDataSource';

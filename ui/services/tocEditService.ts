@@ -5,17 +5,8 @@
 
 import type { IObsidianEvents } from '../datasources/obsidianEvents';
 import type { IObsidianDataSource } from '../datasources/obsidianDataSource';
-import type { ITocDataComposer } from './tocDataComposer';
-import type { TocHeading } from '../schemas/toc';
+import type { ITocStoreAdapter } from './tocStoreAdapter';
 
-export interface ITocStoreAdapter {
-  getState(): {
-    activeFile: string | null;
-    activeHeadingId: string | null;
-    headings: TocHeading[];
-  };
-  setHeadings(headings: TocHeading[]): void;
-}
 
 /**
  * Manages editor change events and background data refresh
@@ -24,7 +15,6 @@ export class TocEditService {
   constructor(
     private events: IObsidianEvents,
     private dataSource: IObsidianDataSource,
-    private dataComposer: ITocDataComposer,
     private tocStore: ITocStoreAdapter
   ) {}
 
@@ -65,29 +55,14 @@ export class TocEditService {
         return;
       }
 
-      // Extract fresh data from Obsidian (cache will be automatically updated)
+      // Extract fresh data from Obsidian (no business logic here)
       const obsidianFile = this.dataSource.extractFileMetadata(activeFileObj);
-      if (!obsidianFile) {
-        console.error('Failed to extract file metadata after edit');
-        return;
-      }
-
       const obsidianHeadings = this.dataSource.extractHeadings(activeFileObj);
-      if (!Array.isArray(obsidianHeadings)) {
-        console.error('Failed to extract headings after edit');
-        return;
-      }
 
-      // Transform to TOC format
-      const tocFile = this.dataComposer.transformFileToToc(activeFileObj, obsidianFile, obsidianHeadings);
-      if (!tocFile) {
-        console.error('Failed to transform file data after edit');
-        return;
+      // Delegate business logic to store (only if data is valid)
+      if (obsidianFile && obsidianHeadings) {
+        this.tocStore.refreshHeadings(activeFileObj, obsidianFile, obsidianHeadings);
       }
-
-      // Update headings but preserve current mode and active heading
-      // This ensures editing doesn't disrupt user's current interaction
-      this.tocStore.setHeadings(tocFile.headings);
     } catch (error) {
       console.error('Failed to refresh headings after edit:', filePath, error);
     }

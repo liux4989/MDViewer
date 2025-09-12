@@ -6,10 +6,8 @@
 import React, { ReactNode, useMemo, useEffect, useRef } from 'react';
 import type { App } from 'obsidian';
 import { TocProviders } from './tocProvider';
-import { TocProvider } from './tocStore';
-import { TocModeProvider } from './tocModeStore';
 import { TocServiceCoordinator } from '../services/tocServiceCoordinator';
-import type { ITocStoreAdapter } from '../services/tocFileService';
+import type { ITocStoreAdapter } from '../services/tocStoreAdapter';
 import type { ITocModeStoreAdapter } from '../services/tocScrollService';
 import { ObsidianDataSource } from '../datasources/obsidianDataSource';
 import { ObsidianEvents } from '../datasources/obsidianEvents';
@@ -38,7 +36,7 @@ function TocEffectsIntegration({ app }: { app: App }) {
   const serviceCoordinatorRef = useRef<TocServiceCoordinator | null>(null);
   const disposerRef = useRef<(() => void) | null>(null);
 
-  // Create stable store adapters for effects
+  // Create store adapter for services
   // Note: Don't include state values in dependencies to avoid infinite re-renders
   const tocStoreAdapter = useMemo((): ITocStoreAdapter => ({
     getState: () => ({
@@ -46,10 +44,10 @@ function TocEffectsIntegration({ app }: { app: App }) {
       activeHeadingId: toc.activeHeadingId,
       headings: toc.headings
     }),
-    setActiveFile: toc.setActiveFile,
-    setHeadings: toc.setHeadings,
+    loadFileData: toc.loadFileData,
+    refreshHeadings: toc.refreshHeadings,
     setActiveHeading: toc.setActiveHeading
-  }), [toc.setActiveFile, toc.setHeadings, toc.setActiveHeading]);
+  }), [toc.loadFileData, toc.refreshHeadings, toc.setActiveHeading]);
 
   const modeStoreAdapter = useMemo((): ITocModeStoreAdapter => ({
     setScrolling: mode.setScrolling

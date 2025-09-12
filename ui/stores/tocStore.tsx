@@ -4,7 +4,8 @@
  */
 
 import React, { createContext, useReducer, useMemo, useCallback, ReactNode } from 'react';
-import type { TocHeading } from '../schemas/toc';
+import type { TFile } from 'obsidian';
+import type { TocHeading, ObsidianFile, ObsidianHeading } from '../schemas/toc';
 import type { IObsidianNavigator } from '../datasources/navigator';
 import { tocReducer, createInitialTocState, type TocState, type TocAction } from './tocReducer';
 
@@ -20,6 +21,10 @@ export interface TocActions {
   setHeadings(headings: TocHeading[]): void;
   /** Navigate to a specific heading */
   navigate(headingId: string): void;
+  /** Business logic: Load file data with processing */
+  loadFileData(file: TFile, obsidianFile: ObsidianFile, obsidianHeadings: ObsidianHeading[]): void;
+  /** Business logic: Refresh headings with processing */
+  refreshHeadings(file: TFile, obsidianFile: ObsidianFile, obsidianHeadings: ObsidianHeading[]): void;
 }
 
 /**
@@ -59,7 +64,7 @@ export const TocContext = createContext<ITocStore | null>(null);
  */
 export function TocProvider({ children, navigator }: TocProviderProps) {
   const [state, dispatch] = useReducer(tocReducer, createInitialTocState());
-  
+
   // Action creators (memoized for performance)
   const setActiveFile = useCallback((filePath: string | null) => {
     dispatch({ type: 'SET_ACTIVE_FILE', payload: filePath });
@@ -74,8 +79,8 @@ export function TocProvider({ children, navigator }: TocProviderProps) {
   }, []);
 
   const navigate = useCallback((headingId: string) => {
-    // Update state first
-    dispatch({ type: 'SET_ACTIVE_HEADING', payload: headingId });
+    // Update state first using atomic action
+    dispatch({ type: 'NAVIGATE_TO_HEADING', payload: { headingId } });
 
     // Then navigate in Obsidian if navigator is available
     if (navigator) {
@@ -96,6 +101,23 @@ export function TocProvider({ children, navigator }: TocProviderProps) {
     return state.headings.filter(h => h.level === level);
   }, [state.headings]);
   
+  // Business logic actions - now using atomic domain-level actions
+  const loadFileData = useCallback((file: TFile, obsidianFile: ObsidianFile, obsidianHeadings: ObsidianHeading[]) => {
+    // Single atomic dispatch - all state changes happen together
+    dispatch({
+      type: 'LOAD_FILE_DATA',
+      payload: { file, obsidianFile, obsidianHeadings }
+    });
+  }, []);
+
+  const refreshHeadings = useCallback((file: TFile, obsidianFile: ObsidianFile, obsidianHeadings: ObsidianHeading[]) => {
+    // Single atomic dispatch - all state changes happen together
+    dispatch({
+      type: 'REFRESH_HEADINGS',
+      payload: { file, obsidianFile, obsidianHeadings }
+    });
+  }, []);
+
   // Create the store value (memoized to prevent unnecessary re-renders)
   const storeValue = useMemo((): ITocStore => ({
     // State
@@ -109,6 +131,10 @@ export function TocProvider({ children, navigator }: TocProviderProps) {
     setHeadings,
     navigate,
     
+    // Business logic actions
+    loadFileData,
+    refreshHeadings,
+
     // Selectors
     getActiveHeading,
     getHeadingsByLevel
@@ -120,6 +146,8 @@ export function TocProvider({ children, navigator }: TocProviderProps) {
     setActiveHeading,
     setHeadings,
     navigate,
+    loadFileData,
+    refreshHeadings,
     getActiveHeading,
     getHeadingsByLevel
   ]);
