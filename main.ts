@@ -72,7 +72,7 @@ export default class FloatingTocPlugin extends Plugin {
 		this.tocContainer.className = 'floating-toc-plugin-container';
 		this.tocContainer.style.position = 'absolute';
 		this.tocContainer.style.top = '50%';
-		this.tocContainer.style.left = '20px';
+		this.tocContainer.style.right = '60px';
 		this.tocContainer.style.transform = 'translateY(-50%)';
 		this.tocContainer.style.zIndex = '1000';
 		this.tocContainer.style.pointerEvents = 'auto';

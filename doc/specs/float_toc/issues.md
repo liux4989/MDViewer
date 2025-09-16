@@ -3,7 +3,7 @@
 
 # detail mode
 - [x] auto scroll to the active heading (not needed - detail view closes during scrolling) 
-- [ ] ellipsis for long headings
+- [x] ellipsis for long headings
 
 
 # Preview mode

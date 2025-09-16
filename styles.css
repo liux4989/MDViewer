@@ -168,7 +168,8 @@
 
 .toc-detail-view {
 	width: 100%;
-	min-width: 160px;
+	min-width: 80px;
+		max-width: 200px;
 }
 
 .toc-detail-list {
