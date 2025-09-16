@@ -28,13 +28,19 @@ export interface IObsidianEvents {
   onFileChanged(cb: (path: string) => void): () => void;
 
   /**
+   * Triggered when editor mode changes (source/preview)
+   * @param cb Callback with the new mode
+   * @returns Cleanup function to remove the listener
+   */
+  onModeChange(cb: (mode: 'source' | 'preview') => void): () => void;
+
+  /**
    * Triggered when editor scrolling occurs in any mode
    * Handles both source and preview containers internally
    * @param cb Callback fired on scroll
    * @returns Cleanup function to remove the listener
    */
   onScroll(cb: () => void): () => void;
-
 
   /**
    * Triggered when user finishes editing (debounced after changes stop)
@@ -48,7 +54,6 @@ export interface IObsidianEvents {
    * @returns Viewport range with start and end lines, or null if no active editor
    */
   getCurrentViewportRange(): ViewportRange | null;
-
 
   /**
    * Clean up all active event listeners
@@ -108,6 +113,30 @@ export class ObsidianEvents implements IObsidianEvents {
     return cleanup;
   }
 
+  onModeChange(cb: (mode: 'source' | 'preview') => void): () => void {
+    let currentMode: 'source' | 'preview' | null = null;
+
+    const handleLayoutChange = () => {
+      const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+      if (!view) return;
+
+      const newMode = view.getMode();
+      if (newMode !== currentMode && (newMode === 'source' || newMode === 'preview')) {
+        currentMode = newMode;
+        cb(newMode);
+      }
+    };
+
+    const eventRef = this.app.workspace.on('layout-change', handleLayoutChange);
+
+    const cleanup = () => {
+      this.app.workspace.offref(eventRef);
+    };
+
+    this.activeCleanupFunctions.push(cleanup);
+    return cleanup;
+  }
+
   onScroll(cb: () => void): () => void {
     const view = this.app.workspace.getActiveViewOfType(MarkdownView);
     if (!view) {
@@ -115,57 +144,46 @@ export class ObsidianEvents implements IObsidianEvents {
     }
 
     let isDisposed = false;
-    const registeredContainers = new Set<HTMLElement>();
+    let currentScrollContainer: HTMLElement | null = null;
 
-    const registerScrollListener = (container: HTMLElement) => {
-      if (isDisposed || registeredContainers.has(container)) {
-        return;
-      }
-
-      container.addEventListener('scroll', cb, { passive: true });
-      registeredContainers.add(container);
-    };
-
-    // MutationObserver to detect DOM changes and register listeners dynamically
-    const observer = new MutationObserver((mutations) => {
+    const registerScrollListener = (mode: 'source' | 'preview') => {
       if (isDisposed) return;
 
-      mutations.forEach((mutation) => {
-        if (mutation.type === 'childList') {
-          // Check if containers were created or recreated
-          const sourceContainer = this.getScrollContainerForMode(view, 'source');
-          const previewContainer = this.getScrollContainerForMode(view, 'preview');
+      // Clean up previous listener
+      if (currentScrollContainer) {
+        currentScrollContainer.removeEventListener('scroll', cb);
+      }
 
-          // Register on any new containers found
-          if (sourceContainer && !registeredContainers.has(sourceContainer)) {
-            registerScrollListener(sourceContainer);
-          }
-          if (previewContainer && !registeredContainers.has(previewContainer)) {
-            registerScrollListener(previewContainer);
-          }
-        }
-      });
-    });
+      // Register new listener
+      const container = this.getScrollContainerForMode(view, mode);
+      if (container) {
+        container.addEventListener('scroll', cb, { passive: true });
+        currentScrollContainer = container;
+      }
+    };
 
-    // Start observing the view container for changes
-    observer.observe(view.containerEl, {
-      childList: true,
-      subtree: true
+    // Register initial scroll listener
+    const initialMode = view.getMode();
+    if (initialMode === 'source' || initialMode === 'preview') {
+      registerScrollListener(initialMode);
+    }
+
+    // Listen for mode changes and re-register scroll listener
+    const modeChangeCleanup = this.onModeChange((newMode) => {
+      registerScrollListener(newMode);
     });
 
     const cleanup = () => {
       isDisposed = true;
-      observer.disconnect();
+      modeChangeCleanup();
 
-      // Clean up all registered listeners
-      registeredContainers.forEach(container => {
+      if (currentScrollContainer) {
         try {
-          container.removeEventListener('scroll', cb);
+          currentScrollContainer.removeEventListener('scroll', cb);
         } catch (error) {
           console.warn('Error removing scroll event listener:', error);
         }
-      });
-      registeredContainers.clear();
+      }
     };
 
     this.activeCleanupFunctions.push(cleanup);
