@@ -10,6 +10,56 @@ import { ObsidianEvents, ViewportRange } from '../datasources/obsidianEvents';
 import { useToc, useTocActions } from '../stores/TocContext';
 import { useTocModeActions, useTocMode } from '../stores/TocModeContext';
 import { TocHeading } from '../schemas';
+import { sanitizeHeadingText } from '../utils/tocTransformers';
+
+// ===== BUSINESS LOGIC FUNCTIONS =====
+
+/**
+ * Processes Obsidian headings into TOC headings with business logic
+ * @param obsidianHeadings - Raw headings from Obsidian metadata cache
+ * @returns Array of processed TocHeading objects
+ */
+function processObsidianHeadings(obsidianHeadings: any[]): TocHeading[] {
+  if (!Array.isArray(obsidianHeadings)) {
+    return [];
+  }
+
+  return obsidianHeadings
+    .filter(h => h && typeof h === 'object') // Filter out invalid headings
+    .filter(h => h.level >= 1 && h.level <= 3) // Business rule: only levels 1-3
+    .map((h, index) => ({
+      id: `heading-${index}`,
+      text: sanitizeHeadingText(h.heading),
+      level: h.level,
+      line: h.position.start
+    }))
+    .filter(h => h.text.length > 0); // Filter out headings with empty text after sanitization
+}
+
+/**
+ * Abstracted function that combines extraction + processing
+ * @param dataSource - Obsidian data source instance
+ * @param activeFile - Active file from Obsidian
+ * @returns Object with file metadata and processed headings, or null if extraction fails
+ */
+function extractAndProcessFileData(dataSource: ObsidianDataSource, activeFile: any) {
+  if (!activeFile) {
+    return null;
+  }
+
+  const obsidianFile = dataSource.extractFileMetadata(activeFile);
+  const obsidianHeadings = dataSource.extractHeadings(activeFile);
+
+  if (!obsidianFile || !obsidianHeadings) {
+    return null;
+  }
+
+  return {
+    file: activeFile,
+    obsidianFile,
+    processedHeadings: processObsidianHeadings(obsidianHeadings)
+  };
+}
 
 /**
  * Find the current active heading based on viewport range
@@ -76,10 +126,9 @@ export function useFileEvents(dataSource: ObsidianDataSource, events: ObsidianEv
     try {
       const activeFile = dataSource.getActiveFile();
       if (activeFile && activeFile.path === filePath) {
-        const obsidianFile = dataSource.extractFileMetadata(activeFile);
-        const obsidianHeadings = dataSource.extractHeadings(activeFile);
-        if (obsidianFile && obsidianHeadings) {
-          tocActions.loadFileData(activeFile, obsidianFile, obsidianHeadings);
+        const processedData = extractAndProcessFileData(dataSource, activeFile);
+        if (processedData) {
+          tocActions.loadFileData(processedData.file.path, processedData.processedHeadings);
         }
       }
     } catch (error) {
@@ -92,10 +141,9 @@ export function useFileEvents(dataSource: ObsidianDataSource, events: ObsidianEv
       try {
         const activeFile = dataSource.getActiveFile();
         if (activeFile) {
-          const obsidianFile = dataSource.extractFileMetadata(activeFile);
-          const obsidianHeadings = dataSource.extractHeadings(activeFile);
-          if (obsidianFile && obsidianHeadings) {
-            tocActions.refreshHeadings(activeFile, obsidianFile, obsidianHeadings);
+          const processedData = extractAndProcessFileData(dataSource, activeFile);
+          if (processedData) {
+            tocActions.refreshHeadings(processedData.processedHeadings);
           }
         }
       } catch (error) {
@@ -109,10 +157,9 @@ export function useFileEvents(dataSource: ObsidianDataSource, events: ObsidianEv
       try {
         const activeFile = dataSource.getActiveFile();
         if (activeFile) {
-          const obsidianFile = dataSource.extractFileMetadata(activeFile);
-          const obsidianHeadings = dataSource.extractHeadings(activeFile);
-          if (obsidianFile && obsidianHeadings) {
-            tocActions.refreshHeadings(activeFile, obsidianFile, obsidianHeadings);
+          const processedData = extractAndProcessFileData(dataSource, activeFile);
+          if (processedData) {
+            tocActions.refreshHeadings(processedData.processedHeadings);
           }
         }
       } catch (error) {
@@ -217,10 +264,9 @@ export function useInitialData(dataSource: ObsidianDataSource) {
         // Load TOC data
         const activeFile = dataSource.getActiveFile();
         if (activeFile) {
-          const obsidianFile = dataSource.extractFileMetadata(activeFile);
-          const obsidianHeadings = dataSource.extractHeadings(activeFile);
-          if (obsidianFile && obsidianHeadings) {
-            tocActions.loadFileData(activeFile, obsidianFile, obsidianHeadings);
+          const processedData = extractAndProcessFileData(dataSource, activeFile);
+          if (processedData) {
+            tocActions.loadFileData(processedData.file.path, processedData.processedHeadings);
           }
         }
       } catch (error) {

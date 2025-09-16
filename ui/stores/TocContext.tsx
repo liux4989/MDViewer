@@ -30,8 +30,8 @@ export type TocAction =
   | { type: 'SET_ACTIVE_FILE'; payload: string | null }
   | { type: 'SET_ACTIVE_HEADING'; payload: string | null }
   | { type: 'SET_HEADINGS'; payload: TocHeading[] }
-  | { type: 'LOAD_FILE_DATA'; payload: { file: TFile; obsidianFile: ObsidianFile; obsidianHeadings: ObsidianHeading[] } }
-  | { type: 'REFRESH_HEADINGS'; payload: { file: TFile; obsidianFile: ObsidianFile; obsidianHeadings: ObsidianHeading[] } }
+  | { type: 'LOAD_FILE_DATA'; payload: { filePath: string; headings: TocHeading[] } }
+  | { type: 'REFRESH_HEADINGS'; payload: { headings: TocHeading[] } }
   | { type: 'NAVIGATE_TO_HEADING'; payload: { headingId: string } };
 
 /**
@@ -91,25 +91,15 @@ export function tocReducer(state: TocState, action: TocAction): TocState {
     case 'LOAD_FILE_DATA':
       return {
         ...state,
-        activeFile: action.payload.file.path,
-        headings: action.payload.obsidianHeadings.map((h, index) => ({
-          id: `heading-${index}`,
-          text: h.heading,
-          level: h.level,
-          line: h.position.start
-        })),
+        activeFile: action.payload.filePath,
+        headings: action.payload.headings,
         activeHeadingId: null // Reset active heading when loading new file
       };
 
     case 'REFRESH_HEADINGS':
       return {
         ...state,
-        headings: action.payload.obsidianHeadings.map((h, index) => ({
-          id: `heading-${index}`,
-          text: h.heading,
-          level: h.level,
-          line: h.position.start
-        }))
+        headings: action.payload.headings
       };
 
     case 'NAVIGATE_TO_HEADING':
@@ -216,19 +206,19 @@ export function useTocActions() {
   }, [dispatch]);
 
   // Business logic actions - now using atomic domain-level actions
-  const loadFileData = useCallback((file: TFile, obsidianFile: ObsidianFile, obsidianHeadings: ObsidianHeading[]) => {
+  const loadFileData = useCallback((filePath: string, headings: TocHeading[]) => {
     // Single atomic dispatch - all state changes happen together
     dispatch({
       type: 'LOAD_FILE_DATA',
-      payload: { file, obsidianFile, obsidianHeadings }
+      payload: { filePath, headings }
     });
   }, [dispatch]);
 
-  const refreshHeadings = useCallback((file: TFile, obsidianFile: ObsidianFile, obsidianHeadings: ObsidianHeading[]) => {
+  const refreshHeadings = useCallback((headings: TocHeading[]) => {
     // Single atomic dispatch - all state changes happen together
     dispatch({
       type: 'REFRESH_HEADINGS',
-      payload: { file, obsidianFile, obsidianHeadings }
+      payload: { headings }
     });
   }, [dispatch]);
 

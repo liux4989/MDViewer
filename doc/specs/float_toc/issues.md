@@ -1,6 +1,6 @@
 # general
 - [ ] the position should be dock at middle - left side of the editor
-
+- [ ] first init the auto-scroll not enable
 # detail mode
 - [x] auto scroll to the active heading (not needed - detail view closes during scrolling) 
 - [x] ellipsis for long headings
