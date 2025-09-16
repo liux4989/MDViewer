@@ -102,6 +102,37 @@ export function getCurrentHeadingFromRange(viewportRange: ViewportRange, heading
 }
 
 /**
+ * Calculate and set the active heading based on current viewport
+ * @param headings Array of TOC headings
+ * @param events ObsidianEvents instance for viewport calculation
+ * @param tocActions TOC actions for setting active heading
+ * @param currentActiveHeadingId Current active heading ID (optional, for optimization)
+ */
+function calculateAndSetActiveHeading(
+  headings: TocHeading[],
+  events: ObsidianEvents,
+  tocActions: ReturnType<typeof useTocActions>,
+  currentActiveHeadingId?: string | null
+): void {
+  if (headings.length === 0) return;
+
+  try {
+    const viewportRange = events.getCurrentViewportRange();
+    if (viewportRange) {
+      const activeHeading = getCurrentHeadingFromRange(viewportRange, headings);
+      const newActiveHeadingId = activeHeading?.id ?? null;
+
+      // Only update if different from current active heading (optimization)
+      if (currentActiveHeadingId === undefined || newActiveHeadingId !== currentActiveHeadingId) {
+        tocActions.setActiveHeading(newActiveHeadingId);
+      }
+    }
+  } catch (error) {
+    console.error('Failed to calculate active heading:', error);
+  }
+}
+
+/**
  * Hook for managing Obsidian data sources
  * Provides stable dataSource and events instances
  */
@@ -129,12 +160,15 @@ export function useFileEvents(dataSource: ObsidianDataSource, events: ObsidianEv
         const processedData = extractAndProcessFileData(dataSource, activeFile);
         if (processedData) {
           tocActions.loadFileData(processedData.file.path, processedData.processedHeadings);
+
+          // Calculate and set active heading after loading new file
+          calculateAndSetActiveHeading(processedData.processedHeadings, events, tocActions);
         }
       }
     } catch (error) {
       console.error('Failed to load file data on open:', error);
     }
-  }, [dataSource, tocActions.loadFileData]);
+  }, [dataSource, events, tocActions]);
 
   const handleFileChanged = useCallback(async (filePath: string) => {
     if (toc.activeFile === filePath) {
@@ -144,13 +178,16 @@ export function useFileEvents(dataSource: ObsidianDataSource, events: ObsidianEv
           const processedData = extractAndProcessFileData(dataSource, activeFile);
           if (processedData) {
             tocActions.refreshHeadings(processedData.processedHeadings);
+
+            // Recalculate active heading after refreshing headings
+            calculateAndSetActiveHeading(processedData.processedHeadings, events, tocActions);
           }
         }
       } catch (error) {
         console.error('Failed to refresh headings on file change:', error);
       }
     }
-  }, [toc.activeFile, dataSource, tocActions.refreshHeadings]);
+  }, [toc.activeFile, dataSource, events, tocActions]);
 
   const handleEditorChangeIdle = useCallback(async (filePath: string) => {
     if (toc.activeFile === filePath) {
@@ -160,13 +197,16 @@ export function useFileEvents(dataSource: ObsidianDataSource, events: ObsidianEv
           const processedData = extractAndProcessFileData(dataSource, activeFile);
           if (processedData) {
             tocActions.refreshHeadings(processedData.processedHeadings);
+
+            // Recalculate active heading after refreshing headings
+            calculateAndSetActiveHeading(processedData.processedHeadings, events, tocActions);
           }
         }
       } catch (error) {
         console.error('Failed to refresh headings on edit idle:', error);
       }
     }
-  }, [toc.activeFile, dataSource, tocActions.refreshHeadings]);
+  }, [toc.activeFile, dataSource, events, tocActions]);
 
   // Register file event listeners
   useEffect(() => {
@@ -216,23 +256,7 @@ export function useScrollEvents(events: ObsidianEvents) {
       timeoutId = setTimeout(() => {
         modeActions.setScrolling(false);
         // Update active heading based on current scroll position
-        try {
-          const headings = toc.headings;
-          if (headings.length === 0) return;
-
-          const viewportRange = events.getCurrentViewportRange();
-          if (viewportRange === null) return;
-
-          // Calculate which heading is active based on viewport range
-          const activeHeading = getCurrentHeadingFromRange(viewportRange, headings);
-          const newActiveHeadingId = activeHeading?.id ?? null;
-          // Only update if different from current active heading
-          if (newActiveHeadingId !== toc.activeHeadingId) {
-            tocActions.setActiveHeading(newActiveHeadingId);
-          }
-        } catch (error) {
-          console.error('Failed to update active heading after scroll:', error);
-        }
+        calculateAndSetActiveHeading(toc.headings, events, tocActions, toc.activeHeadingId);
         timeoutId = null; // Clear reference after execution
       }, 150); // 150ms debounce
     };
@@ -255,7 +279,7 @@ export function useScrollEvents(events: ObsidianEvents) {
 /**
  * Hook for loading initial TOC data on mount
  */
-export function useInitialData(dataSource: ObsidianDataSource) {
+export function useInitialData(dataSource: ObsidianDataSource, events: ObsidianEvents) {
   const tocActions = useTocActions();
 
   useEffect(() => {
@@ -267,6 +291,9 @@ export function useInitialData(dataSource: ObsidianDataSource) {
           const processedData = extractAndProcessFileData(dataSource, activeFile);
           if (processedData) {
             tocActions.loadFileData(processedData.file.path, processedData.processedHeadings);
+
+            // Calculate and set initial active heading after loading data
+            calculateAndSetActiveHeading(processedData.processedHeadings, events, tocActions);
           }
         }
       } catch (error) {
@@ -275,5 +302,5 @@ export function useInitialData(dataSource: ObsidianDataSource) {
     };
 
     loadInitialData();
-  }, [dataSource, tocActions.loadFileData]);
+  }, [dataSource, events, tocActions]);
 }

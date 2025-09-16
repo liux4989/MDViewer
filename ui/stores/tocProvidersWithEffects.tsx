@@ -28,7 +28,7 @@ function TocEffectsIntegration({ app }: { app: App }) {
   useScrollEvents(events);
 
   // Load initial data on mount
-  useInitialData(dataSource);
+  useInitialData(dataSource, events);
 
   return null; // This component only handles effects, doesn't render anything
 }
