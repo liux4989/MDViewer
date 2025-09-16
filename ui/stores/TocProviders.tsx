@@ -1,11 +1,13 @@
 /**
  * Combined TOC Providers
  * Provides both Mode and TOC stores to the component tree
+ * Following React's recommended pattern for multiple contexts
  */
 
 import React, { ReactNode } from 'react';
-import { TocProvider } from './tocStore';
-import { TocModeProvider } from './tocModeStore';
+import { TocProvider } from './TocContext';
+import { TocModeProvider } from './TocModeContext';
+import { NavigationProvider } from './NavigationContext';
 import type { IObsidianNavigator } from '../datasources/navigator';
 
 /**
@@ -19,14 +21,16 @@ export interface TocProvidersProps {
 
 /**
  * Combined TOC Providers Component
- * Wraps children with both Mode and TOC store providers
- * Mode provider is outer to ensure it's available to TOC provider if needed
+ * Wraps children with TOC Mode, TOC store, and Navigation providers
+ * Navigation provider is innermost as it depends on TOC state
  */
 export function TocProviders({ children, navigator }: TocProvidersProps) {
   return (
     <TocModeProvider>
       <TocProvider navigator={navigator}>
-        {children}
+        <NavigationProvider navigator={navigator}>
+          {children}
+        </NavigationProvider>
       </TocProvider>
     </TocModeProvider>
   );

@@ -1,104 +1,41 @@
 /**
  * TOC Providers with Effects Integration
- * Combines both stores with sync effects for complete TOC functionality
+ * Handles Obsidian events and coordinates with TOC stores
+ * Simplified architecture without complex adapters
  */
 
-import React, { ReactNode, useMemo, useEffect, useRef } from 'react';
+import React, { ReactNode } from 'react';
 import type { App } from 'obsidian';
-import { TocProviders } from './tocProvider';
-import { TocServiceCoordinator } from '../services/tocServiceCoordinator';
-import type { ITocStoreAdapter } from '../services/tocStoreAdapter';
-import type { ITocModeStoreAdapter } from '../services/tocScrollService';
-import { ObsidianDataSource } from '../datasources/obsidianDataSource';
-import { ObsidianEvents } from '../datasources/obsidianEvents';
+import { TocProviders } from './TocProviders';
 import type { IObsidianNavigator } from '../datasources/navigator';
-import { useToc } from '../hooks/useToc';
-import { useTocMode } from '../hooks/useTocMode';
-
-/**
- * Props for TocProvidersWithEffects
- */
+import { useObsidianDataSources, useFileEvents, useScrollEvents, useInitialData } from '../hooks';
 export interface TocProvidersWithEffectsProps {
   children: ReactNode;
-  /** Obsidian app instance for data loading and effects */
   app: App;
-  /** Optional navigator for heading navigation */
   navigator?: IObsidianNavigator;
 }
 
-/**
- * Internal component that handles effects integration
- * Must be inside both store providers to access their contexts
- */
+
+
 function TocEffectsIntegration({ app }: { app: App }) {
-  const toc = useToc();
-  const mode = useTocMode();
-  const serviceCoordinatorRef = useRef<TocServiceCoordinator | null>(null);
-  const disposerRef = useRef<(() => void) | null>(null);
+  // Initialize data sources
+  const { dataSource, events } = useObsidianDataSources(app);
 
-  // Create store adapter for services
-  // Note: Don't include state values in dependencies to avoid infinite re-renders
-  const tocStoreAdapter = useMemo((): ITocStoreAdapter => ({
-    getState: () => ({
-      activeFile: toc.activeFile,
-      activeHeadingId: toc.activeHeadingId,
-      headings: toc.headings
-    }),
-    loadFileData: toc.loadFileData,
-    refreshHeadings: toc.refreshHeadings,
-    setActiveHeading: toc.setActiveHeading
-  }), [toc.loadFileData, toc.refreshHeadings, toc.setActiveHeading]);
+  // Set up file event handling
+  useFileEvents(dataSource, events);
 
-  const modeStoreAdapter = useMemo((): ITocModeStoreAdapter => ({
-    setScrolling: mode.setScrolling
-  }), [mode.setScrolling]);
+  // Set up scroll event handling (combines useEffect and useCallback)
+  useScrollEvents(events);
 
-  // Initialize data sources and service coordinator once
-  const { dataSource, events, serviceCoordinator } = useMemo(() => {
-    const dataSource = new ObsidianDataSource(app);
-    const events = new ObsidianEvents(app);
-    const serviceCoordinator = new TocServiceCoordinator(
-      events,
-      dataSource,
-      tocStoreAdapter,
-      modeStoreAdapter
-    );
-    return { dataSource, events, serviceCoordinator };
-  }, [app, tocStoreAdapter, modeStoreAdapter]);
-
-  // Initialize service coordinator once
-  useEffect(() => {
-    // Initialize service coordinator
-    serviceCoordinatorRef.current = serviceCoordinator;
-    disposerRef.current = serviceCoordinator.init();
-
-    // Cleanup on unmount
-    return () => {
-      if (disposerRef.current) {
-        disposerRef.current();
-        disposerRef.current = null;
-      }
-      serviceCoordinatorRef.current = null;
-    };
-  }, [serviceCoordinator]);
-
-  // Load initial data once on mount
-  useEffect(() => {
-    const loadInitialData = async () => {
-      if (serviceCoordinatorRef.current) {
-        await serviceCoordinatorRef.current.loadInitialData();
-      }
-    };
-
-    loadInitialData();
-  }, []);
+  // Load initial data on mount
+  useInitialData(dataSource);
 
   return null; // This component only handles effects, doesn't render anything
 }
 
 /**
  * TOC Providers with Effects Integration
- * Provides both stores and initializes sync effects
+ * Combines both store providers with service coordination
  */
 export function TocProvidersWithEffects({ children, app, navigator }: TocProvidersWithEffectsProps) {
   return (

@@ -1,5 +1,5 @@
 import React from 'react';
-import { TocProvidersWithEffects } from './stores/tocProvidersWithEffects';
+import { TocProvidersWithEffects } from './stores/TocProvidersWithEffects';
 import TocContainer from './components/TocContainer';
 import { useObsidianApp } from './ObsidianAppContext';
 import { ObsidianDataSource } from './datasources/obsidianDataSource';
@@ -29,15 +29,17 @@ const App: React.FC<AppProps> = ({ floatingMode = false }) => {
 	}
 	else {
 		return (
-			<ErrorBoundary>
-				<h1> debug mode {floatingMode.toString()} </h1>
+			<ErrorBoundary
+				onError={(error, errorInfo) => {
+					console.error('TOC Error:', error, errorInfo);
+				}}
+			>
+				<TocProvidersWithEffects app={app} navigator={navigator}>
+					<TocContainer visible={true} />
+				</TocProvidersWithEffects>
 			</ErrorBoundary>
 		);
 	}
-
 };
 
 export default App;
-
-
-

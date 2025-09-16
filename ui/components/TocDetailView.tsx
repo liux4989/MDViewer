@@ -4,10 +4,10 @@
  * Follows the compact view component pattern
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import type { TocHeading } from '../schemas/toc';
 import { useNavigate } from '../hooks/useNavigate';
-import { useTocMode } from '../hooks/useTocMode';
+import { useTocModeActions } from '../stores/TocModeContext';
 
 /**
  * Props for TocDetailView component
@@ -27,21 +27,40 @@ export interface TocDetailViewProps {
  */
 export function TocDetailView({ headings, activeHeadingId, className }: TocDetailViewProps) {
   const { navigateToHeading } = useNavigate();
-  const mode = useTocMode();
+  const modeActions = useTocModeActions();
+  const listRef = useRef<HTMLDivElement>(null);
+  const lastScrolledHeadingRef = useRef<string | null>(null);
+
 
   const handlePointerOut = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     // Only clear hovering when pointer actually leaves the container
     const related = e.relatedTarget as Node | null;
     if (!related || !(e.currentTarget as Node).contains(related)) {
-      mode.setHovering(false);
+      modeActions.setHovering(false);
     }
-  }, [mode]);
+  }, [modeActions]);
+
+  // Instant scroll to active heading when detail view opens (only once per heading)
+  useEffect(() => {
+    if (activeHeadingId && listRef.current && activeHeadingId !== lastScrolledHeadingRef.current) {
+      const activeElement = listRef.current.querySelector(`[data-heading-id="${activeHeadingId}"]`);
+      if (activeElement) {
+        // Instant scroll without animation
+        activeElement.scrollIntoView({
+          behavior: 'auto',
+          block: 'center'
+        });
+        // Mark this heading as scrolled to prevent repeated scrolling
+        lastScrolledHeadingRef.current = activeHeadingId;
+      }
+    }
+  }, [activeHeadingId]);
 
   if (headings.length === 0) {
     return (
       <div
         className={`toc-detail-view toc-detail-empty ${className || ''}`}
-        onPointerEnter={() => mode.setHovering(true)}
+        onPointerEnter={() => modeActions.setHovering(true)}
         onPointerOut={handlePointerOut}
       >
         <div className="toc-detail-empty-message">No headings</div>
@@ -52,10 +71,10 @@ export function TocDetailView({ headings, activeHeadingId, className }: TocDetai
   return (
     <div
       className={`toc-detail-view ${className || ''}`}
-      onPointerEnter={() => mode.setHovering(true)}
+      onPointerEnter={() => modeActions.setHovering(true)}
       onPointerOut={handlePointerOut}
     >
-      <div className="toc-detail-listF">
+      <div className="toc-detail-list" ref={listRef}>
         {headings.map((heading) => {
           const isActive = heading.id === activeHeadingId;
           return (

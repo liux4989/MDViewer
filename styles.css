@@ -37,44 +37,55 @@
 
 .toc-preview-view {
 	width: 100%;
-	max-width: 120px;
-	/* Narrower for line preview */
-	min-width: 80px;
+	max-width: 100px;
+		/* Narrower for line preview - prevents lines from being too wide */
+		min-width: 60px;
 }
 
+/* Floating preview mode - minimal styling to look like built-in editor component */
+.toc-preview-floating {
+	background: transparent;
+	border: none;
+	box-shadow: none;
+	padding: 2px;
+	/* Minimal padding for floating preview */
+	backdrop-filter: none;
+	/* No blur effect for cleaner integration */
+}
 .toc-preview-lines {
 	display: flex;
 	flex-direction: column;
-	gap: 2px;
-	/* Space between lines */
+	gap: 4px;
+		/* Increased space between lines for better separation */
 	margin: 0;
 	padding: 4px;
 	align-items: flex-start;
 }
 
 .toc-preview-line {
-	height: 2px;
-	/* Thin lines representing headings */
+	height: 1px;
+		/* Thinner lines representing headings */
 	background-color: var(--text-faint);
 	border-radius: 1px;
 	transition: background-color 0.2s ease, height 0.1s ease;
-	min-width: 20px;
+	min-width: 15px;
 	/* Minimum visible line */
 	max-width: 100%;
+	/* Ensure lines don't exceed container width */
+		box-sizing: border-box;
 }
 
 /* Level-specific line styling */
 .toc-preview-line.toc-level-1 {
-	height: 3px;
-	/* Slightly thicker for H1 */
+	height: 2px;
+		/* Thinner H1 lines */
 	background-color: var(--text-muted);
 }
 
 .toc-preview-line.toc-level-2 {
-	height: 2px;
+	height: 1px;
 	background-color: var(--text-faint);
-	margin-left: 4px;
-	/* Slight indent */
+	/* All headings align to the left */
 }
 
 .toc-preview-line.toc-level-3,
@@ -84,32 +95,31 @@
 	height: 1px;
 	/* Thinner for deeper levels */
 	background-color: var(--text-faint);
-	margin-left: 8px;
-	/* More indent */
+	/* All headings align to the left */
 	opacity: 0.7;
 }
 
 /* Active heading highlight */
 .toc-preview-line.toc-preview-active {
 	background-color: var(--text-accent);
-	height: 3px;
-	/* Slightly thicker when active */
+	height: 2px;
+		/* Thinner when active */
 	box-shadow: 0 0 3px var(--text-accent);
 }
 
 .toc-preview-line.toc-preview-active.toc-level-1 {
-	height: 4px;
+	height: 2px;
 }
 
 .toc-preview-line.toc-preview-active.toc-level-2 {
-	height: 3px;
+	height: 2px;
 }
 
 .toc-preview-line.toc-preview-active.toc-level-3,
 .toc-preview-line.toc-preview-active.toc-level-4,
 .toc-preview-line.toc-preview-active.toc-level-5,
 .toc-preview-line.toc-preview-active.toc-level-6 {
-	height: 2px;
+	height: 1px;
 	opacity: 1;
 }
 
@@ -140,6 +150,8 @@
 	/* Compact height for floating */
 	overflow-y: auto;
 	backdrop-filter: blur(8px);
+	/* Smooth transitions for position changes */
+		transition: opacity 0.2s ease, transform 0.2s ease;
 	/* Position will be handled by the mount element */
 }
 
@@ -148,6 +160,10 @@
 	pointer-events: auto;
 }
 
+/* Plugin container styles for smooth transitions */
+.floating-toc-plugin-container {
+	transition: opacity 0.15s ease, transform 0.15s ease;
+}
 /* ===== TOC Detail Mode Styles (Indented List) ===== */
 
 .toc-detail-view {
@@ -161,6 +177,9 @@
 	gap: 2px;
 	margin: 0;
 	padding: 4px;
+	max-height: 400px;
+		overflow-y: auto;
+		scroll-behavior: auto;
 }
 
 .toc-detail-item {

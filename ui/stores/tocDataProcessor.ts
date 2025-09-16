@@ -1,6 +1,7 @@
 /**
  * TOC Data Processor - Business Logic Layer
  * Handles data transformation and business decisions for TOC operations
+ * Moved to stores/ to co-locate with TOC domain logic
  */
 
 import type { TFile } from 'obsidian';

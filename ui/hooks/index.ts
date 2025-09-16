@@ -4,6 +4,13 @@
  */
 
 // Core hooks
-export { useToc } from './useToc';
-export { useTocMode } from './useTocMode';
 export { useNavigate, type NavigationDirection } from './useNavigate';
+
+// Effects hooks
+export {
+    useObsidianDataSources,
+    useFileEvents,
+    useScrollEvents,
+    useInitialData,
+    getCurrentHeadingFromRange
+} from './useTocEffects';

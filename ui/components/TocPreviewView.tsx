@@ -6,7 +6,7 @@
 
 import React from 'react';
 import type { TocHeading } from '../schemas/toc';
-import { useTocMode } from '../hooks/useTocMode';
+import { useTocModeActions } from '../stores/TocModeContext';
 
 /**
  * Props for TocPreviewView component
@@ -21,21 +21,23 @@ export interface TocPreviewViewProps {
 }
 
 /**
- * Calculate line width based on heading level and text length
+ * Calculate line width based on heading level
+ * Each level has uniform length within that level, but different levels have different lengths
  */
 function calculateLineWidth(heading: TocHeading): number {
-  const baseWidth = 100; // Base width percentage
+  // Fixed widths for each level to ensure uniformity within levels
+  // while maintaining visual hierarchy between levels
+  // Widths reduced by half for more compact appearance
+  const levelWidths = {
+    1: 45,  // H1: Longest lines for main sections (90/2)
+    2: 37,  // H2: Medium lines for subsections (75/2)
+    3: 30,  // H3: Shorter lines for sub-subsections (60/2)
+    4: 22,  // H4: Even shorter for deeper levels (45/2)
+    5: 17,  // H5: Very short for deep nesting (35/2)
+    6: 12   // H6: Shortest for deepest levels (25/2)
+  };
   
-  // Adjust width based on heading level (H1 = longest, H3+ = shortest)
-  const levelMultiplier = heading.level === 1 ? 1.0 : 
-                         heading.level === 2 ? 0.8 : 
-                         0.6; // H3 and below
-  
-  // Adjust based on text length (longer text = slightly longer line)
-  const textLength = heading.text.length;
-  const textMultiplier = Math.min(1.0, 0.4 + (textLength / 50)); // Scale 0.4-1.0
-  
-  return Math.round(baseWidth * levelMultiplier * textMultiplier);
+  return levelWidths[heading.level as keyof typeof levelWidths] || 12;
 }
 
 /**
@@ -43,14 +45,14 @@ function calculateLineWidth(heading: TocHeading): number {
  * Pure display component showing document structure as line previews
  */
 export function TocPreviewView({ headings, activeHeadingId, className }: TocPreviewViewProps) {
-  const mode = useTocMode();
+  const modeActions = useTocModeActions();
 
   if (headings.length === 0) {
     return (
       <div
         className={`toc-preview-view toc-preview-empty ${className || ''}`}
-        onPointerEnter={() => mode.setHovering(true)}
-        onPointerLeave={() => mode.setHovering(false)}
+        onPointerEnter={() => modeActions.setHovering(true)}
+        onPointerLeave={() => modeActions.setHovering(false)}
       >
         <div className="toc-preview-empty-message">
           No structure
@@ -62,8 +64,8 @@ export function TocPreviewView({ headings, activeHeadingId, className }: TocPrev
   return (
     <div
       className={`toc-preview-view ${className || ''}`}
-      onPointerEnter={() => mode.setHovering(true)}
-      onPointerLeave={() => mode.setHovering(false)}
+      onPointerEnter={() => modeActions.setHovering(true)}
+      onPointerLeave={() => modeActions.setHovering(false)}
     >
       <div className="toc-preview-lines">
         {headings.map((heading) => {

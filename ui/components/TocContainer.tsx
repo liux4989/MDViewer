@@ -5,8 +5,8 @@
  */
 
 import React from 'react';
-import { useToc } from '../hooks/useToc';
-import { useTocMode } from '../hooks/useTocMode';
+import { useToc } from '../stores/TocContext';
+import { useTocModeSelectors } from '../stores/TocModeContext';
 import TocPreviewView from './TocPreviewView';
 import TocDetailView from './TocDetailView';
 
@@ -25,29 +25,34 @@ export interface TocContainerProps {
  */
 export function TocContainer({ visible = true }: TocContainerProps) {
   const toc = useToc();
-  const mode = useTocMode();
-  const isPreviewMode = mode.isPreviewMode();
+  const modeSelectors = useTocModeSelectors();
+  const isPreviewMode = modeSelectors.isPreviewMode();
 
   if (!visible) {
     return null;
   }
 
   // Render floating TOC directly (plugin handles positioning)
-  return (
-    <div className="toc-floating-container">
-      {isPreviewMode ? (
-        <TocPreviewView
+  // For preview mode, render without container to look more like built-in editor component
+  // For detail mode, use container styling for proper floating appearance
+  if (isPreviewMode) {
+    return (
+      <TocPreviewView
+        headings={toc.headings}
+        activeHeadingId={toc.activeHeadingId}
+        className="toc-preview-floating"
+      />
+    );
+  } else {
+    return (
+      <div className="toc-floating-container">
+        <TocDetailView
           headings={toc.headings}
           activeHeadingId={toc.activeHeadingId}
         />
-      ) : (
-          <TocDetailView
-            headings={toc.headings}
-            activeHeadingId={toc.activeHeadingId}
-          />
-      )}
-    </div>
-  );
+      </div>
+    );
+  }
 }
 
 export default TocContainer;

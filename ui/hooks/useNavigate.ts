@@ -5,8 +5,9 @@
  */
 
 import { useMemo, useCallback } from 'react';
-import { useToc } from './useToc';
-import { useTocMode } from './useTocMode';
+import { useTocActions, useToc } from '../stores/TocContext';
+import { useTocModeActions } from '../stores/TocModeContext';
+import { useNavigation } from '../stores/NavigationContext';
 import type { TocHeading } from '../schemas/toc';
 
 /**
@@ -20,29 +21,34 @@ export type NavigationDirection = 'next' | 'prev' | 'parent' | 'child';
  */
 export function useNavigate() {
   const toc = useToc();
-  const mode = useTocMode();
-  
+  const tocActions = useTocActions();
+  const modeActions = useTocModeActions();
+  const { navigate } = useNavigation();
+
   // Memoized navigation functions
   const navigateToHeading = useCallback((headingId: string) => {
     // Set navigation state in mode store
-    mode.setNavigating(true);
+    modeActions.setNavigating(true);
 
-    // Navigate in TOC store
-    toc.navigate(headingId);
+    // Update TOC state (set active heading)
+    tocActions.setActiveHeading(headingId);
+
+    // Perform navigation side effect
+    navigate(headingId);
 
     // Clear navigation state after a delay to allow DOM to settle
     setTimeout(() => {
-      mode.setNavigating(false);
+      modeActions.setNavigating(false);
     }, 300);
-  }, [toc, mode]);
-  
+  }, [tocActions, modeActions, navigate]);
+
   const navigateToHeadingByIndex = useCallback((index: number) => {
     const heading = toc.headings[index];
     if (heading) {
       navigateToHeading(heading.id);
     }
   }, [toc.headings, navigateToHeading]);
-  
+
   return useMemo(() => ({
     /** Navigate to a specific heading by ID */
     navigateToHeading,
