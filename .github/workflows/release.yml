@@ -1,0 +1,65 @@
+name: Release Plugin
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build plugin
+        run: npm run build
+
+      - name: Package plugin
+        run: |
+          mkdir -p dist
+          cp main.js manifest.json styles.css dist/
+          cd dist && zip -r floating-toc.zip .
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Floating TOC ${{ github.ref_name }}
+          body: |
+            ## Changes in this release
+            
+            <!-- Add release notes here -->
+            
+            ## Installation
+            
+            1. Download `floating-toc.zip` from the assets below
+            2. In Obsidian, go to Settings → Community plugins
+            3. Disable safe mode
+            4. Click "Install plugin" and select the downloaded ZIP file
+            
+            ## Submit to Community Plugins
+            
+            To submit this plugin to the Obsidian Community Plugins directory:
+            
+            1. Go to [Community Plugins Submission](https://github.com/obsidianmd/obsidian-releases/blob/master/submit-plugin.md)
+            2. Fill out the form with:
+               - Plugin ID: `floating-toc`
+               - Repository URL: `https://github.com/liuxinjia/MDViewer`
+               - Version: `${{ github.ref_name }}`
+          files: dist/floating-toc.zip
+          draft: false
+          prerelease: false
+          generate_release_notes: true
