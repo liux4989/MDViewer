@@ -71,9 +71,6 @@ function extractAndProcessFileData(dataSource: ObsidianDataSource, activeFile: a
 export function getCurrentHeadingFromRange(viewportRange: ViewportRange, headings: TocHeading[]): TocHeading | undefined {
   const { startLine, endLine } = viewportRange;
 
-  // Calculate the center line of the viewport
-  const centerLine = Math.floor((startLine + endLine) / 2);
-
   // Find headings that are relevant to the current viewport
   const relevantHeadings = headings.filter(h =>
     h.line <= endLine // Heading is at or before the end of viewport
@@ -83,19 +80,19 @@ export function getCurrentHeadingFromRange(viewportRange: ViewportRange, heading
     return undefined;
   }
 
-  // Find the heading that's closest to the center of the viewport
-  // Priority: headings at or before center, then closest after center
-  const beforeOrAtCenter = relevantHeadings.filter(h => h.line <= centerLine);
+  // Find the first heading that's closest to the viewport start
+  // Priority: headings at or before viewport start, then closest after start
+  const beforeOrAtStart = relevantHeadings.filter(h => h.line <= startLine);
 
-  if (beforeOrAtCenter.length > 0) {
-    // Return the last heading at or before viewport center
-    return beforeOrAtCenter[beforeOrAtCenter.length - 1];
+  if (beforeOrAtStart.length > 0) {
+    // Return the last heading at or before viewport start (closest to viewport)
+    return beforeOrAtStart[beforeOrAtStart.length - 1];
   }
 
-  // If no headings before center, find the closest one after center
-  const afterCenter = relevantHeadings.filter(h => h.line > centerLine);
-  if (afterCenter.length > 0) {
-    return afterCenter[0]; // First heading after viewport center
+  // If no headings before viewport start, find the first one within viewport
+  const withinViewport = relevantHeadings.filter(h => h.line > startLine && h.line <= endLine);
+  if (withinViewport.length > 0) {
+    return withinViewport[0]; // First heading within viewport
   }
 
   return undefined;
