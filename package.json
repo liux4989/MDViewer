@@ -1,6 +1,6 @@
 {
   "name": "floating-toc",
-  "version": "1.0.1",
+  "version": "1.0.0",
   "description": "An interactive floating table of contents overlay positioned in the middle-left of the editor view for quick navigation and visual context",
   "main": "main.js",
   "scripts": {
