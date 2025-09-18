@@ -12,7 +12,9 @@
     "test:watch": "vitest --watch",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "type-check:strict": "tsc --noEmit --forceConsistentCasingInFileNames",
+    "case-check": "node scripts/check-case-sensitivity.js"
   },
   "keywords": [
     "obsidian",
